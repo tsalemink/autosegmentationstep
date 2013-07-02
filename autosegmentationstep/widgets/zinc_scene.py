@@ -43,7 +43,27 @@ class ZincScene(QtOpenGL.QGLWidget):
         self._imageDataLocation = imageDataLocation
 
     def getPointCloud(self):
-        return []
+        point_cloud = []
+        field_module = self._point_cloud_region.getFieldModule()
+        field_module.beginChange()
+        field_cache = field_module.createCache()
+        coordinate_field = field_module.findFieldByName('coordinates')
+        nodeset = field_module.findNodesetByName('cmiss_nodes')
+        template = nodeset.createNodeTemplate()
+        template.defineField(coordinate_field)
+
+        node_iterator = nodeset.createNodeIterator()
+        node = node_iterator.next()
+        while node.isValid():
+            field_cache.setNode(node)
+            position = coordinate_field.evaluateReal(field_cache, 3)[1]
+            node = node_iterator.next()
+            point_cloud.append(position)
+
+
+        field_module.endChange()
+
+        return point_cloud
     
     def setImagePlaneVisibility(self, state):
         self._iso_graphic.setVisibilityFlag(state != 0)
@@ -141,8 +161,8 @@ class ZincScene(QtOpenGL.QGLWidget):
         self._scene_viewer.viewAll()
         
     def setupOutputRegion(self, root_region):
-        output_region = root_region.createChild('output')
-        field_module = output_region.getFieldModule()
+        self._point_cloud_region = root_region.createChild('output')
+        field_module = self._point_cloud_region.getFieldModule()
         finite_element_field = field_module.createFiniteElement(3)
         # Set the name of the field, we give it label to help us understand it's purpose
         finite_element_field.setName('coordinates')
@@ -152,7 +172,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         nodeset = field_module.findNodesetByDomainType(Field.DOMAIN_NODES)
         
         graphics_module = self._context.getDefaultGraphicsModule()
-        rendition = graphics_module.getRendition(output_region)
+        rendition = graphics_module.getRendition(self._point_cloud_region)
         self._point_cloud = rendition.createGraphicPoints()
         self._point_cloud.setDomainType(Field.DOMAIN_NODES)
         self._point_cloud.setCoordinateField(finite_element_field)
