@@ -3,11 +3,11 @@ import os, re
 
 from PySide import QtCore, QtOpenGL
 
-from zinc.context import Context
-from zinc.graphic import Graphic
-from zinc.sceneviewer import SceneViewerInput, SceneViewer
-from zinc.field import Field, FieldImage
-from zinc.element import Element, ElementBasis
+from opencmiss.zinc.context import Context
+from opencmiss.zinc.graphic import Graphic
+from opencmiss.zinc.sceneviewer import SceneViewerInput, SceneViewer
+from opencmiss.zinc.field import Field, FieldImage
+from opencmiss.zinc.element import Element, ElementBasis
 
 # Create a button map of Qt mouse buttons to Zinc input buttons
 button_map = {QtCore.Qt.LeftButton: SceneViewerInput.INPUT_BUTTON_LEFT, QtCore.Qt.MiddleButton: SceneViewerInput.INPUT_BUTTON_MIDDLE, QtCore.Qt.RightButton: SceneViewerInput.INPUT_BUTTON_RIGHT}
@@ -365,7 +365,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         scene_input.setType(SceneViewerInput.INPUT_EVENT_TYPE_BUTTON_PRESS)
         scene_input.setButton(button_map[mouseevent.button()])
             
-        self._scene_viewer.setInput(scene_input)
+        self._scene_viewer.processInput(scene_input)
         
     def mouseReleaseEvent(self, mouseevent):
         '''
@@ -376,7 +376,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         scene_input.setType(SceneViewerInput.INPUT_EVENT_TYPE_BUTTON_RELEASE)
         scene_input.setButton(button_map[mouseevent.button()])
             
-        self._scene_viewer.setInput(scene_input)
+        self._scene_viewer.processInput(scene_input)
         
     def mouseMoveEvent(self, mouseevent):
         '''
@@ -389,7 +389,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         if mouseevent.type() == QtCore.QEvent.Leave:
             scene_input.setPosition(-1, -1)
         
-        self._scene_viewer.setInput(scene_input)
+        self._scene_viewer.processInput(scene_input)
         
         # The viewport has been changed so update the OpenGL scene.
         self.updateGL()
