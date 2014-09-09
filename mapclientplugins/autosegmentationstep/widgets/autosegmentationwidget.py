@@ -19,7 +19,7 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
 '''
 from PySide import QtGui
 
-from autosegmentationstep.widgets.ui_autosegmentationwidget import Ui_AutoSegmentationWidget
+from mapclientplugins.autosegmentationstep.widgets.ui_autosegmentationwidget import Ui_AutoSegmentationWidget
 
 class AutoSegmentationWidget(QtGui.QWidget):
     '''
