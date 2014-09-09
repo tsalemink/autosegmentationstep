@@ -83,4 +83,4 @@ class Ui_AutoSegmentationWidget(object):
         self.pointCloudCheckBox.setText(QtGui.QApplication.translate("AutoSegmentationWidget", "Point Cloud", None, QtGui.QApplication.UnicodeUTF8))
         self.doneButton.setText(QtGui.QApplication.translate("AutoSegmentationWidget", "&Done", None, QtGui.QApplication.UnicodeUTF8))
 
-from autosegmentationstep.widgets.zinc_scene import ZincScene
+from mapclientplugins.autosegmentationstep.widgets.zinc_scene import ZincScene
