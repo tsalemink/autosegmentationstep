@@ -1,7 +1,7 @@
 
 import os, re
 
-from PySide import QtCore, QtOpenGL
+from PySide2 import QtCore, QtOpenGL
 
 from opencmiss.zinc.context import Context
 from opencmiss.zinc.sceneviewer import Sceneviewer, Sceneviewerevent

@@ -17,11 +17,11 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
     You should have received a copy of the GNU General Public License
     along with MAP Client.  If not, see <http://www.gnu.org/licenses/>..
 '''
-from PySide import QtGui
+from PySide2 import QtWidgets
 
 from mapclientplugins.autosegmentationstep.widgets.ui_autosegmentationwidget import Ui_AutoSegmentationWidget
 
-class AutoSegmentationWidget(QtGui.QWidget):
+class AutoSegmentationWidget(QtWidgets.QWidget):
     '''
     About dialog to display program about information.
     '''
@@ -31,7 +31,7 @@ class AutoSegmentationWidget(QtGui.QWidget):
         '''
         Constructor
         '''
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self._ui = Ui_AutoSegmentationWidget()
         self._ui.setupUi(self)
         self._ui.zincSceneViewer.setImageDataLocation(imageDataLocation)

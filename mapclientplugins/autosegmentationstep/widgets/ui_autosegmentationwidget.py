@@ -1,86 +1,123 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'qt/autosegmentationwidget.ui'
-#
-# Created: Tue Jul  2 14:00:30 2013
-#      by: pyside-uic 0.2.14 running on PySide 1.1.2
-#
-# WARNING! All changes made in this file will be lost!
+################################################################################
+## Form generated from reading UI file 'autosegmentationwidget.ui'
+##
+## Created by: Qt User Interface Compiler version 5.15.2
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
 
-from PySide import QtCore, QtGui
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+
+from autosegmentationstep.widgets.zinc_scene import ZincScene
+
 
 class Ui_AutoSegmentationWidget(object):
     def setupUi(self, AutoSegmentationWidget):
-        AutoSegmentationWidget.setObjectName("AutoSegmentationWidget")
+        if not AutoSegmentationWidget.objectName():
+            AutoSegmentationWidget.setObjectName(u"AutoSegmentationWidget")
         AutoSegmentationWidget.resize(448, 352)
-        self.verticalLayout = QtGui.QVBoxLayout(AutoSegmentationWidget)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.groupBox = QtGui.QGroupBox(AutoSegmentationWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
+        self.verticalLayout = QVBoxLayout(AutoSegmentationWidget)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.groupBox = QGroupBox(AutoSegmentationWidget)
+        self.groupBox.setObjectName(u"groupBox")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
         self.groupBox.setSizePolicy(sizePolicy)
-        self.groupBox.setObjectName("groupBox")
-        self.gridLayout = QtGui.QGridLayout(self.groupBox)
-        self.gridLayout.setObjectName("gridLayout")
-        self.verticalLayout_3 = QtGui.QVBoxLayout()
-        self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.horizontalLayout_2 = QtGui.QHBoxLayout()
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem)
-        self.isoValueSlider = QtGui.QSlider(self.groupBox)
+        self.gridLayout = QGridLayout(self.groupBox)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
+
+        self.isoValueSlider = QSlider(self.groupBox)
+        self.isoValueSlider.setObjectName(u"isoValueSlider")
         self.isoValueSlider.setMaximum(99)
-        self.isoValueSlider.setOrientation(QtCore.Qt.Vertical)
-        self.isoValueSlider.setObjectName("isoValueSlider")
+        self.isoValueSlider.setOrientation(Qt.Vertical)
+
         self.horizontalLayout_2.addWidget(self.isoValueSlider)
-        spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem1)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_3)
+
+
         self.verticalLayout_3.addLayout(self.horizontalLayout_2)
-        self.verticalLayout_2 = QtGui.QVBoxLayout()
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.imagePlaneCheckBox = QtGui.QCheckBox(self.groupBox)
+
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.imagePlaneCheckBox = QCheckBox(self.groupBox)
+        self.imagePlaneCheckBox.setObjectName(u"imagePlaneCheckBox")
         self.imagePlaneCheckBox.setChecked(True)
-        self.imagePlaneCheckBox.setObjectName("imagePlaneCheckBox")
+
         self.verticalLayout_2.addWidget(self.imagePlaneCheckBox)
-        self.segmentationCheckBox = QtGui.QCheckBox(self.groupBox)
+
+        self.segmentationCheckBox = QCheckBox(self.groupBox)
+        self.segmentationCheckBox.setObjectName(u"segmentationCheckBox")
         self.segmentationCheckBox.setChecked(True)
-        self.segmentationCheckBox.setObjectName("segmentationCheckBox")
+
         self.verticalLayout_2.addWidget(self.segmentationCheckBox)
-        self.pointCloudCheckBox = QtGui.QCheckBox(self.groupBox)
+
+        self.pointCloudCheckBox = QCheckBox(self.groupBox)
+        self.pointCloudCheckBox.setObjectName(u"pointCloudCheckBox")
         self.pointCloudCheckBox.setChecked(True)
-        self.pointCloudCheckBox.setObjectName("pointCloudCheckBox")
+
         self.verticalLayout_2.addWidget(self.pointCloudCheckBox)
+
+
         self.verticalLayout_3.addLayout(self.verticalLayout_2)
+
+
         self.gridLayout.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
+
         self.zincSceneViewer = ZincScene(self.groupBox)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(1)
-        sizePolicy.setVerticalStretch(1)
-        sizePolicy.setHeightForWidth(self.zincSceneViewer.sizePolicy().hasHeightForWidth())
-        self.zincSceneViewer.setSizePolicy(sizePolicy)
-        self.zincSceneViewer.setObjectName("zincSceneViewer")
+        self.zincSceneViewer.setObjectName(u"zincSceneViewer")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy1.setHorizontalStretch(1)
+        sizePolicy1.setVerticalStretch(1)
+        sizePolicy1.setHeightForWidth(self.zincSceneViewer.sizePolicy().hasHeightForWidth())
+        self.zincSceneViewer.setSizePolicy(sizePolicy1)
+
         self.gridLayout.addWidget(self.zincSceneViewer, 0, 1, 1, 1)
+
+
         self.verticalLayout.addWidget(self.groupBox)
-        self.horizontalLayout = QtGui.QHBoxLayout()
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem2)
-        self.doneButton = QtGui.QPushButton(AutoSegmentationWidget)
-        self.doneButton.setObjectName("doneButton")
+
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer)
+
+        self.doneButton = QPushButton(AutoSegmentationWidget)
+        self.doneButton.setObjectName(u"doneButton")
+
         self.horizontalLayout.addWidget(self.doneButton)
+
+
         self.verticalLayout.addLayout(self.horizontalLayout)
 
+
         self.retranslateUi(AutoSegmentationWidget)
-        QtCore.QMetaObject.connectSlotsByName(AutoSegmentationWidget)
+
+        QMetaObject.connectSlotsByName(AutoSegmentationWidget)
+    # setupUi
 
     def retranslateUi(self, AutoSegmentationWidget):
-        AutoSegmentationWidget.setWindowTitle(QtGui.QApplication.translate("AutoSegmentationWidget", "Form", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox.setTitle(QtGui.QApplication.translate("AutoSegmentationWidget", "Auto Segmentation Viewer", None, QtGui.QApplication.UnicodeUTF8))
-        self.imagePlaneCheckBox.setText(QtGui.QApplication.translate("AutoSegmentationWidget", "Image Plane", None, QtGui.QApplication.UnicodeUTF8))
-        self.segmentationCheckBox.setText(QtGui.QApplication.translate("AutoSegmentationWidget", "Segmentation", None, QtGui.QApplication.UnicodeUTF8))
-        self.pointCloudCheckBox.setText(QtGui.QApplication.translate("AutoSegmentationWidget", "Point Cloud", None, QtGui.QApplication.UnicodeUTF8))
-        self.doneButton.setText(QtGui.QApplication.translate("AutoSegmentationWidget", "&Done", None, QtGui.QApplication.UnicodeUTF8))
+        AutoSegmentationWidget.setWindowTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Form", None))
+        self.groupBox.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Auto Segmentation Viewer", None))
+        self.imagePlaneCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane", None))
+        self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
+        self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))
+        self.doneButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"&Done", None))
+    # retranslateUi
 
-from mapclientplugins.autosegmentationstep.widgets.zinc_scene import ZincScene
