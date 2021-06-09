@@ -21,11 +21,11 @@ from PySide2 import QtWidgets
 
 from mapclientplugins.autosegmentationstep.widgets.ui_autosegmentationwidget import Ui_AutoSegmentationWidget
 
+
 class AutoSegmentationWidget(QtWidgets.QWidget):
     '''
     About dialog to display program about information.
     '''
-
 
     def __init__(self, imageDataLocation, parent=None):
         '''

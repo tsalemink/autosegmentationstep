@@ -1,4 +1,3 @@
-
 import os, re
 
 from PySide2 import QtCore, QtOpenGL
@@ -12,7 +11,11 @@ from opencmiss.zinc.glyph import Glyph
 
 # mapping from qt to zinc start
 # Create a button map of Qt mouse buttons to Zinc input buttons
-button_map = {QtCore.Qt.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT, QtCore.Qt.MidButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE, QtCore.Qt.RightButton: Sceneviewerinput.BUTTON_TYPE_RIGHT}
+button_map = {QtCore.Qt.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT,
+              QtCore.Qt.MidButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
+              QtCore.Qt.RightButton: Sceneviewerinput.BUTTON_TYPE_RIGHT}
+
+
 # Create a modifier map of Qt modifier keys to Zinc modifier keys
 def modifier_map(qt_modifiers):
     '''
@@ -24,6 +27,8 @@ def modifier_map(qt_modifiers):
         modifiers = modifiers | Sceneviewerinput.MODIFIER_FLAG_SHIFT
 
     return modifiers
+
+
 # mapping from qt to zinc end
 
 
@@ -33,11 +38,13 @@ def tryint(s):
     except:
         return s
 
+
 def alphanum_key(s):
     """ Turn a string into a list of string and number chunks.
         "z23a" -> ["z", 23, "a"]
     """
-    return [ tryint(c) for c in re.split('([0-9]+)', s) ]
+    return [tryint(c) for c in re.split('([0-9]+)', s)]
+
 
 class ZincScene(QtOpenGL.QGLWidget):
 
@@ -99,7 +106,8 @@ class ZincScene(QtOpenGL.QGLWidget):
 
             # From the scene viewer module we can create a scene viewer, we set up the scene viewer to have the same OpenGL properties as
             # the QGLWidget.
-            self._sceneviewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
+            self._sceneviewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE,
+                                                                      Sceneviewer.STEREO_MODE_MONO)
             self._sceneviewer.setProjectionMode(Sceneviewer.PROJECTION_MODE_PERSPECTIVE)
 
             # Create a filter for visibility flags which will allow us to see our graphic.
@@ -124,7 +132,7 @@ class ZincScene(QtOpenGL.QGLWidget):
             tessellation_module = self._context.getTessellationmodule()
             tessellation = tessellation_module.createTessellation()
             tessellation.setMinimumDivisions([64])
-#             tessellation_module.setDefaultTessellation(tessellation)
+            #             tessellation_module.setDefaultTessellation(tessellation)
 
             # We use the beginChange and endChange to wrap any immediate changes and will
             # streamline the rendering of the scene.
@@ -135,15 +143,15 @@ class ZincScene(QtOpenGL.QGLWidget):
             self.createMaterialUsingImageField()
 
             field_module = root_region.getFieldmodule()
-#             xi_field = field_module.findFieldByName('xi')
+            #             xi_field = field_module.findFieldByName('xi')
             finite_element_field = field_module.findFieldByName('coordinates')
             self._segmented_image_field = field_module.createFieldImageFromSource(self._segmented_field)
 
             self._contour = scene.createGraphicsContours()
             self._contour.setCoordinateField(finite_element_field)
             self._contour.setTessellation(tessellation)
-#             self._contour.setMaterial(self._material)
-#             print(self._contour2.setTextureCoordinateField(xi_field))
+            #             self._contour.setMaterial(self._material)
+            #             print(self._contour2.setTextureCoordinateField(xi_field))
             # set the yz scalar field to our isosurface
             self._contour.setIsoscalarField(self._segmented_image_field)
             self._contour.setMaterial(gold)
@@ -223,7 +231,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         material_module = self._context.getMaterialmodule()
         self._material = material_module.createMaterial()
         self._material.setName('texture_block')
-#        self._material.setManaged(True)
+        #        self._material.setManaged(True)
 
         # Get a handle to the root _surface_region
         root_region = self._context.getDefaultRegion()
@@ -231,10 +239,10 @@ class ZincScene(QtOpenGL.QGLWidget):
         # The field module allows us to create a field image to
         # store the image data into.
         field_module = root_region.getFieldmodule()
-#         xi_field = field_module.findFieldByName('coordinates')
+        #         xi_field = field_module.findFieldByName('coordinates')
         # Create an image field. A temporary xi source field is created for us.
         self._image_field = field_module.createFieldImage()  # FromSource(xi_field)
-#        self._image_field.setName('image_field')
+        #        self._image_field.setName('image_field')
 
         self._image_field.setFilterMode(FieldImage.FILTER_MODE_LINEAR)
         self._image_field.setWrapMode(FieldImage.WRAP_MODE_REPEAT)
@@ -243,7 +251,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         # image file from disk
         stream_information = self._image_field.createStreaminformationImage()
         # specify depth of texture block i.e. number of images
-#        stream_information.setAttributeInteger(stream_information.IMAGE_ATTRIBUTE_, self.number_of_images)
+        #        stream_information.setAttributeInteger(stream_information.IMAGE_ATTRIBUTE_, self.number_of_images)
 
         # Load images onto an invidual texture blocks.
         directory = self._imageDataLocation.location()
@@ -256,14 +264,16 @@ class ZincScene(QtOpenGL.QGLWidget):
                 stream_information.createStreamresourceFile(string_name)
 
         # Actually read in the image file into the image field.
-#         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_WIDTH_PIXELS, 1)
-#         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_HEIGHT_PIXELS, 1)
-#         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_DEPTH_PIXELS, 1)
+        #         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_WIDTH_PIXELS, 1)
+        #         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_HEIGHT_PIXELS, 1)
+        #         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_DEPTH_PIXELS, 1)
         self._image_field.read(stream_information)
         self._material.setTextureField(1, self._image_field)
 
-        self._smooth_field = field_module.createFieldImagefilterCurvatureAnisotropicDiffusion(self._image_field, 0.0625, 2, 5)
-        self._segmented_field = field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1, 1, [0.5, 0.6111, 0.3889])
+        self._smooth_field = field_module.createFieldImagefilterCurvatureAnisotropicDiffusion(self._image_field, 0.0625,
+                                                                                              2, 5)
+        self._segmented_field = field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1,
+                                                                                      1, [0.5, 0.6111, 0.3889])
 
     def _zincSceneviewerEvent(self, event):
         '''
@@ -276,17 +286,17 @@ class ZincScene(QtOpenGL.QGLWidget):
     def setSliderValue(self, value):
         self._iso_graphic.setListIsovalues([value / 100.0])
 
-#         self.updateGL()
+    #         self.updateGL()
 
     def createFiniteElements(self, region):
         '''
         Create finite element meshes for each of the images
         '''
         # Define the coordinates for each 3D element
-#        node_coordinate_set = [[0, 0, 0], [101, 0, 0], [0, 0, 52.0], [101, 0, 52.0], [0, 109, 0], [101, 109, 0], [0, 109, 52.0], [101, 109, 52.0]]
-#        a , b, c = 53.192, 49.288, 36.4
-#        node_coordinate_set = [[a, 0, 0], [a, 0, c], [0, 0, 0], [0, 0, c], [a, b, 0], [a, b, c], [0, b, 0], [0, b, c]]
-#        a , b, c = 101, 109, 52
+        #        node_coordinate_set = [[0, 0, 0], [101, 0, 0], [0, 0, 52.0], [101, 0, 52.0], [0, 109, 0], [101, 109, 0], [0, 109, 52.0], [101, 109, 52.0]]
+        #        a , b, c = 53.192, 49.288, 36.4
+        #        node_coordinate_set = [[a, 0, 0], [a, 0, c], [0, 0, 0], [0, 0, c], [a, b, 0], [a, b, c], [0, b, 0], [0, b, c]]
+        #        a , b, c = 101, 109, 52
         field_module = region.getFieldmodule()
         field_module.beginChange()
 
@@ -401,7 +411,6 @@ def create3DFiniteElement(fieldmodule, finite_element_field, node_coordinate_set
     # the indecies of the nodes in the node template we want to use.
     node_indexes = [1, 2, 3, 4, 5, 6, 7, 8]
 
-
     # Define a nodally interpolated element field or field component in the
     # element_template
     element_template.defineFieldSimpleNodal(finite_element_field, -1, linear_basis, node_indexes)
@@ -411,5 +420,3 @@ def create3DFiniteElement(fieldmodule, finite_element_field, node_coordinate_set
         element_template.setNode(i + 1, node)
 
     mesh.defineElement(-1, element_template)
-
-
