@@ -12,7 +12,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
-from autosegmentationstep.widgets.zinc_scene import ZincScene
+from mapclientplugins.autosegmentationstep.widgets.zinc_scene import ZincScene
 
 
 class Ui_AutoSegmentationWidget(object):
