@@ -20,10 +20,11 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
 import string
 import random
 
-from PySide import QtGui
+from PySide2 import QtGui
 
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 from mapclientplugins.autosegmentationstep.widgets.autosegmentationwidget import AutoSegmentationWidget
+
 
 class AutoSegmentationStep(WorkflowStepMountPoint):
     '''
@@ -35,8 +36,12 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         super(AutoSegmentationStep, self).__init__('Automatic Segmenter', location)
         self._state = StepState()
         self._icon = QtGui.QImage(':/autosegmentation/images/autoseg.png')
-        self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port', 'http://physiomeproject.org/workflow/1.0/rdf-schema#uses', 'http://physiomeproject.org/workflow/1.0/rdf-schema#images'))
-        self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port', 'http://physiomeproject.org/workflow/1.0/rdf-schema#provides', 'http://physiomeproject.org/workflow/1.0/rdf-schema#pointcloud'))
+        self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#images'))
+        self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#pointcloud'))
 
         # The widget will be the interface widget for the user to see the
         # autosegmentation step and interact with it.
@@ -82,6 +87,7 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         point_cloud = self._widget.getPointCloud()
         return point_cloud
 
+
 class StepState(object):
     '''
     This class holds the step state, for use with serialization
@@ -90,6 +96,7 @@ class StepState(object):
 
     def __init__(self):
         pass
+
 
 def generateIdentifier(char_set=string.ascii_uppercase + string.digits):
     return ''.join(random.sample(char_set * 6, 6))
