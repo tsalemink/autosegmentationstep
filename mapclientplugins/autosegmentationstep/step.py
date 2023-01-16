@@ -63,12 +63,12 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
     def setIdentifier(self, identifier):
         self._identifier = identifier
 
-    def serialize(self, location):
+    def serialize(self):
         '''There is nothing to be done here for this step.
         '''
         pass
 
-    def deserialize(self, location):
+    def deserialize(self, string):
         '''There is nothing to be done here for this step.
         '''
         pass
