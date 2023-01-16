@@ -20,7 +20,7 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
 import string
 import random
 
-from PySide2 import QtGui
+from PySide6 import QtGui
 
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 from mapclientplugins.autosegmentationstep.widgets.autosegmentationwidget import AutoSegmentationWidget

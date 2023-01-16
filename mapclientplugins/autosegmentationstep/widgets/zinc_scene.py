@@ -1,6 +1,6 @@
 import os, re
 
-from PySide2 import QtCore, QtOpenGL
+from PySide6 import QtCore, QtOpenGLWidgets
 
 from opencmiss.zinc.context import Context
 from opencmiss.zinc.sceneviewer import Sceneviewer, Sceneviewerevent
@@ -12,7 +12,7 @@ from opencmiss.zinc.glyph import Glyph
 # mapping from qt to zinc start
 # Create a button map of Qt mouse buttons to Zinc input buttons
 button_map = {QtCore.Qt.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT,
-              QtCore.Qt.MidButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
+              QtCore.Qt.MiddleButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
               QtCore.Qt.RightButton: Sceneviewerinput.BUTTON_TYPE_RIGHT}
 
 
@@ -46,7 +46,7 @@ def alphanum_key(s):
     return [tryint(c) for c in re.split('([0-9]+)', s)]
 
 
-class ZincScene(QtOpenGL.QGLWidget):
+class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
 
     # init start
     def __init__(self, parent=None):
@@ -54,7 +54,7 @@ class ZincScene(QtOpenGL.QGLWidget):
         Call the super class init functions, create a Zinc context and set the scene viewer handle to None.
         '''
 
-        QtOpenGL.QGLWidget.__init__(self, parent)
+        QtOpenGLWidgets.QOpenGLWidget.__init__(self, parent)
         # Create a Zinc context from which all other objects can be derived either directly or indirectly.
         self._context = Context("autosegmenter")
         self._sceneviewer = None
