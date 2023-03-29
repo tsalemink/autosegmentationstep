@@ -11,9 +11,11 @@ from opencmiss.zinc.glyph import Glyph
 
 # mapping from qt to zinc start
 # Create a button map of Qt mouse buttons to Zinc input buttons
-button_map = {QtCore.Qt.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT,
-              QtCore.Qt.MiddleButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
-              QtCore.Qt.RightButton: Sceneviewerinput.BUTTON_TYPE_RIGHT}
+button_map = {
+    QtCore.Qt.MouseButton.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT,
+    QtCore.Qt.MouseButton.MiddleButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
+    QtCore.Qt.MouseButton.RightButton: Sceneviewerinput.BUTTON_TYPE_RIGHT
+}
 
 
 # Create a modifier map of Qt modifier keys to Zinc modifier keys
@@ -23,7 +25,7 @@ def modifier_map(qt_modifiers):
     the Qt modifier flags passed in.
     '''
     modifiers = Sceneviewerinput.MODIFIER_FLAG_NONE
-    if qt_modifiers & QtCore.Qt.SHIFT:
+    if qt_modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier:
         modifiers = modifiers | Sceneviewerinput.MODIFIER_FLAG_SHIFT
 
     return modifiers
