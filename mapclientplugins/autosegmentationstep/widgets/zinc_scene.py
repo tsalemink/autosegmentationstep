@@ -281,7 +281,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         repaint required event all other events are ignored.
         '''
         if event.getChangeFlags() & Sceneviewerevent.CHANGE_FLAG_REPAINT_REQUIRED:
-            QtCore.QTimer.singleShot(0, self.updateGL)
+            QtCore.QTimer.singleShot(0, self.update)
 
     def setSliderValue(self, value):
         self._iso_graphic.setListIsovalues([value / 100.0])
