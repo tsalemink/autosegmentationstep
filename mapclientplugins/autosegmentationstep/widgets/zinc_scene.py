@@ -150,6 +150,9 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             finite_element_field = field_module.findFieldByName('coordinates')
             self._segmented_image_field = field_module.createFieldImageFromSource(self._segmented_field)
 
+            # Visualise the outline.
+            self._create_image_outline(finite_element_field)
+
             self._contour = scene.createGraphicsContours()
             self._contour.setCoordinateField(finite_element_field)
             self._contour.setTessellation(tessellation)
@@ -196,6 +199,17 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         attributes.setBaseSize([0.01])
 
         return nodeset, finite_element_field
+
+    def _create_image_outline(self, finite_element_field):
+        scene = self._context.getDefaultRegion().getScene()
+
+        scene.beginChange()
+        outline = scene.createGraphicsLines()
+        outline.setCoordinateField(finite_element_field)
+        outline.setName('element_outline')
+        scene.endChange()
+
+        return outline
 
     def create_surface_graphics(self, region):
         """
