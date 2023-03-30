@@ -10,8 +10,7 @@ from opencmiss.zinc.field import Field, FieldImage
 from opencmiss.zinc.element import Element, Elementbasis
 from opencmiss.zinc.glyph import Glyph
 
-# mapping from qt to zinc start
-# Create a button map of Qt mouse buttons to Zinc input buttons
+
 button_map = {
     QtCore.Qt.MouseButton.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT,
     QtCore.Qt.MouseButton.MiddleButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
@@ -19,11 +18,9 @@ button_map = {
 }
 
 
-# Create a modifier map of Qt modifier keys to Zinc modifier keys
 def modifier_map(qt_modifiers):
     """
-    Return a Zinc SceneViewerInput modifiers object that is created from
-    the Qt modifier flags passed in.
+    Return a Zinc SceneViewerInput modifiers object that is created from the Qt modifier flags passed in.
     """
     modifiers = Sceneviewerinput.MODIFIER_FLAG_NONE
     if qt_modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier:
@@ -32,10 +29,7 @@ def modifier_map(qt_modifiers):
     return modifiers
 
 
-# mapping from qt to zinc end
-
-
-def tryint(s):
+def try_int(s):
     try:
         return int(s)
     except (TypeError, ValueError):
@@ -47,7 +41,7 @@ def alphanum_key(s):
     Turn a string into a list of string and number chunks.
     "z23a" -> ["z", 23, "a"]
     """
-    return [tryint(c) for c in re.split('([0-9]+)', s)]
+    return [try_int(c) for c in re.split('([0-9]+)', s)]
 
 
 class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
@@ -55,24 +49,26 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         """
         Call the super class init functions, create a Zinc context and set the scene viewer handle to None.
         """
-
         QtOpenGLWidgets.QOpenGLWidget.__init__(self, parent)
-        # Create a Zinc context from which all other objects can be derived either directly or indirectly.
+
         self._context = Context("autosegmenter")
-        self._sceneviewer = None
+
+        self._scene_viewer = None
+        self._scene_viewer_notifier = None
         self._image_data_location = None
 
+        self._image_field = None
+        self._segmented_field = None
         self._segmented_image_field = None
+        self._smooth_field = None
+        self._scalar_field = None
+
+        self._material = None
         self._contour = None
-        self._sceneviewernotifier = None
+        self._iso_graphic = None
         self._point_cloud = None
         self._point_cloud_region = None
         self._iso_graphic = None
-        self._image_field = None
-        self._material = None
-        self._smooth_field = None
-        self._segmented_field = None
-        self._scalar_field = None
 
     def set_image_data_location(self, image_data_location):
         self._image_data_location = image_data_location
@@ -108,19 +104,15 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
     def set_point_cloud_visibility(self, state):
         self._point_cloud.setVisibilityFlag(state != 0)
 
-    # initializeGL start
     def initializeGL(self):
-        """
-        Initialise the Zinc scene for drawing the axis glyph at a point.
-        """
-        if self._sceneviewer is None:
+        if self._scene_viewer is None:
             # From the context get the default scene viewer module.
             scene_viewer_module = self._context.getSceneviewermodule()
 
             # From the scene viewer module we can create a scene viewer, we set up the scene viewer to have the same OpenGL properties as
             # the QGLWidget.
-            self._sceneviewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
-            self._sceneviewer.setProjectionMode(Sceneviewer.PROJECTION_MODE_PERSPECTIVE)
+            self._scene_viewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
+            self._scene_viewer.setProjectionMode(Sceneviewer.PROJECTION_MODE_PERSPECTIVE)
 
             # Create a filter for visibility flags which will allow us to see our graphic.
             filter_module = self._context.getScenefiltermodule()
@@ -128,7 +120,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             graphics_filter = filter_module.createScenefilterVisibilityFlags()
 
             # Set the graphics filter for the scene viewer otherwise nothing will be visible.
-            self._sceneviewer.setScenefilter(graphics_filter)
+            self._scene_viewer.setScenefilter(graphics_filter)
             root_region = self._context.getDefaultRegion()
             scene = root_region.getScene()
 
@@ -146,8 +138,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             tessellation.setMinimumDivisions([64])
             #             tessellation_module.setDefaultTessellation(tessellation)
 
-            # We use the beginChange and endChange to wrap any immediate changes and will
-            # streamline the rendering of the scene.
+            # We use the beginChange and endChange to wrap any immediate changes and streamline the rendering of the scene.
             scene.beginChange()
 
             # Visualise images
@@ -176,16 +167,14 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             # Create a graphic point in our rendition and set it's glyph type to axes.
             # Set the scene to our scene viewer.
             self.create_surface_graphics(root_region)
-            self._sceneviewer.setScene(scene)
+            self._scene_viewer.setScene(scene)
 
             scene.endChange()
-            # Let the rendition render the scene.
-            # initializeGL end
 
-            self._sceneviewer.viewAll()
+            self._scene_viewer.viewAll()
 
-            self._sceneviewernotifier = self._sceneviewer.createSceneviewernotifier()
-            self._sceneviewernotifier.setCallback(self._zinc_scene_viewer_event)
+            self._scene_viewer_notifier = self._scene_viewer.createSceneviewernotifier()
+            self._scene_viewer_notifier.setCallback(self._zinc_scene_viewer_event)
 
     def setup_output_region(self, root_region):
         self._point_cloud_region = root_region.createChild('output')
@@ -338,7 +327,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         will clear the background so any OpenGL drawing of your own needs to go after this
         API call.
         """
-        self._sceneviewer.renderScene()
+        self._scene_viewer.renderScene()
         # paintGL end
 
     # resizeGL start
@@ -346,31 +335,31 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         """
         Respond to widget resize events.
         """
-        self._sceneviewer.setViewportSize(width, height)
+        self._scene_viewer.setViewportSize(width, height)
         # resizeGL end
 
     def mousePressEvent(self, event):
         """
         Inform the scene viewer of a mouse press event.
         """
-        scene_input = self._sceneviewer.createSceneviewerinput()
+        scene_input = self._scene_viewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
         scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_BUTTON_PRESS)
         scene_input.setButtonType(button_map[event.button()])
         scene_input.setModifierFlags(modifier_map(event.modifiers()))
 
-        self._sceneviewer.processSceneviewerinput(scene_input)
+        self._scene_viewer.processSceneviewerinput(scene_input)
 
     def mouseReleaseEvent(self, event):
         """
         Inform the scene viewer of a mouse release event.
         """
-        scene_input = self._sceneviewer.createSceneviewerinput()
+        scene_input = self._scene_viewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
         scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_BUTTON_RELEASE)
         scene_input.setButtonType(button_map[event.button()])
 
-        self._sceneviewer.processSceneviewerinput(scene_input)
+        self._scene_viewer.processSceneviewerinput(scene_input)
 
     def mouseMoveEvent(self, event):
         """
@@ -378,13 +367,13 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         change to the viewport.
         """
 
-        scene_input = self._sceneviewer.createSceneviewerinput()
+        scene_input = self._scene_viewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
         scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_MOTION_NOTIFY)
         if event.type() == QtCore.QEvent.Type.Leave:
             scene_input.setPosition(-1, -1)
 
-        self._sceneviewer.processSceneviewerinput(scene_input)
+        self._scene_viewer.processSceneviewerinput(scene_input)
 
 
 def create_3d_finite_element(fieldmodule, finite_element_field, node_coordinate_set):
