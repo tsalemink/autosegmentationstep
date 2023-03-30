@@ -381,7 +381,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         scene_input = self._sceneviewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
         scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_MOTION_NOTIFY)
-        if event.type() == QtCore.QEvent.Leave:
+        if event.type() == QtCore.QEvent.Type.Leave:
             scene_input.setPosition(-1, -1)
 
         self._sceneviewer.processSceneviewerinput(scene_input)
