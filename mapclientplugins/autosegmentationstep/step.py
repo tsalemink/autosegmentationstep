@@ -1,7 +1,7 @@
-'''
+"""
 MAP Client, a program to generate detailed musculoskeletal models for OpenSim.
     Copyright (C) 2012  University of Auckland
-    
+
 This file is part of MAP Client. (http://launchpad.net/mapclient)
 
     MAP Client is free software: you can redistribute it and/or modify
@@ -16,9 +16,9 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
 
     You should have received a copy of the GNU General Public License
     along with MAP Client.  If not, see <http://www.gnu.org/licenses/>..
-'''
-import string
+"""
 import random
+import string as s
 
 from PySide6 import QtGui
 
@@ -27,10 +27,10 @@ from mapclientplugins.autosegmentationstep.widgets.autosegmentationwidget import
 
 
 class AutoSegmentationStep(WorkflowStepMountPoint):
-    '''
+    """
     Skeleton step which is intended to be used as a starting point
     for new steps.
-    '''
+    """
 
     def __init__(self, location):
         super(AutoSegmentationStep, self).__init__('Automatic Segmenter', location)
@@ -50,7 +50,7 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
 
         # This step only requires an identifier which we can generate from
         # a char set.  This makes the configuration of the step trivial.
-        self._identifier = generateIdentifier()
+        self._identifier = generate_identifier()
         self._configured = True
         self._dataIn = None
 
@@ -64,39 +64,32 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self._identifier = identifier
 
     def serialize(self):
-        '''There is nothing to be done here for this step.
-        '''
         pass
 
     def deserialize(self, string):
-        '''There is nothing to be done here for this step.
-        '''
         pass
 
     def execute(self):
         if not self._widget:
             self._widget = AutoSegmentationWidget(self._dataIn)
-            self._widget._ui.doneButton.clicked.connect(self._doneExecution)
-
+            self._widget.register_done_execution(self._doneExecution)
         self._setCurrentWidget(self._widget)
 
-    def setPortData(self, portId, dataIn):
-        self._dataIn = dataIn
+    def setPortData(self, port_id, data_in):
+        self._dataIn = data_in
 
     def getPortData(self, index):
-        point_cloud = self._widget.getPointCloud()
+        point_cloud = self._widget.get_point_cloud()
         return point_cloud
 
 
 class StepState(object):
-    '''
-    This class holds the step state, for use with serialization
-    /deserialization.
-    '''
-
+    """
+    This class holds the step state, for use with serialization/deserialization.
+    """
     def __init__(self):
         pass
 
 
-def generateIdentifier(char_set=string.ascii_uppercase + string.digits):
+def generate_identifier(char_set=s.ascii_uppercase + s.digits):
     return ''.join(random.sample(char_set * 6, 6))

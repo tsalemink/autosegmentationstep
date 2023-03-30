@@ -1,4 +1,5 @@
-import os, re
+import os
+import re
 
 from PySide6 import QtCore, QtOpenGLWidgets
 
@@ -20,10 +21,10 @@ button_map = {
 
 # Create a modifier map of Qt modifier keys to Zinc modifier keys
 def modifier_map(qt_modifiers):
-    '''
+    """
     Return a Zinc SceneViewerInput modifiers object that is created from
     the Qt modifier flags passed in.
-    '''
+    """
     modifiers = Sceneviewerinput.MODIFIER_FLAG_NONE
     if qt_modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier:
         modifiers = modifiers | Sceneviewerinput.MODIFIER_FLAG_SHIFT
@@ -37,36 +38,46 @@ def modifier_map(qt_modifiers):
 def tryint(s):
     try:
         return int(s)
-    except:
+    except (TypeError, ValueError):
         return s
 
 
 def alphanum_key(s):
-    """ Turn a string into a list of string and number chunks.
-        "z23a" -> ["z", 23, "a"]
+    """
+    Turn a string into a list of string and number chunks.
+    "z23a" -> ["z", 23, "a"]
     """
     return [tryint(c) for c in re.split('([0-9]+)', s)]
 
 
 class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
-
-    # init start
     def __init__(self, parent=None):
-        '''
+        """
         Call the super class init functions, create a Zinc context and set the scene viewer handle to None.
-        '''
+        """
 
         QtOpenGLWidgets.QOpenGLWidget.__init__(self, parent)
         # Create a Zinc context from which all other objects can be derived either directly or indirectly.
         self._context = Context("autosegmenter")
         self._sceneviewer = None
-        self._imageDataLocation = None
-        # init end
+        self._image_data_location = None
 
-    def setImageDataLocation(self, imageDataLocation):
-        self._imageDataLocation = imageDataLocation
+        self._segmented_image_field = None
+        self._contour = None
+        self._sceneviewernotifier = None
+        self._point_cloud = None
+        self._point_cloud_region = None
+        self._iso_graphic = None
+        self._image_field = None
+        self._material = None
+        self._smooth_field = None
+        self._segmented_field = None
+        self._scalar_field = None
 
-    def getPointCloud(self):
+    def set_image_data_location(self, image_data_location):
+        self._image_data_location = image_data_location
+
+    def get_point_cloud(self):
         point_cloud = []
         field_module = self._point_cloud_region.getFieldmodule()
         field_module.beginChange()
@@ -88,28 +99,27 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
 
         return point_cloud
 
-    def setImagePlaneVisibility(self, state):
+    def set_image_plane_visibility(self, state):
         self._iso_graphic.setVisibilityFlag(state != 0)
 
-    def setSegmentationVisibility(self, state):
+    def set_segmentation_visibility(self, state):
         self._contour.setVisibilityFlag(state != 0)
 
-    def setPointCloudVisibility(self, state):
+    def set_point_cloud_visibility(self, state):
         self._point_cloud.setVisibilityFlag(state != 0)
 
     # initializeGL start
     def initializeGL(self):
-        '''
-        Initialise the Zinc scene for drawing the axis glyph at a point.  
-        '''
+        """
+        Initialise the Zinc scene for drawing the axis glyph at a point.
+        """
         if self._sceneviewer is None:
             # From the context get the default scene viewer module.
             scene_viewer_module = self._context.getSceneviewermodule()
 
             # From the scene viewer module we can create a scene viewer, we set up the scene viewer to have the same OpenGL properties as
             # the QGLWidget.
-            self._sceneviewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE,
-                                                                      Sceneviewer.STEREO_MODE_MONO)
+            self._sceneviewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
             self._sceneviewer.setProjectionMode(Sceneviewer.PROJECTION_MODE_PERSPECTIVE)
 
             # Create a filter for visibility flags which will allow us to see our graphic.
@@ -141,8 +151,8 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             scene.beginChange()
 
             # Visualise images
-            self.createFiniteElements(root_region)
-            self.createMaterialUsingImageField()
+            self.create_finite_elements(root_region)
+            self.create_material_using_image_field()
 
             field_module = root_region.getFieldmodule()
             #             xi_field = field_module.findFieldByName('xi')
@@ -160,12 +170,12 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             # define the initial position of the isosurface on the texture block
             self._contour.setListIsovalues([0.2])  # Range(1, self.initial_positions[0], self.initial_positions[0])
 
-            nodeset, output_coordinates = self.setupOutputRegion(root_region)
+            nodeset, output_coordinates = self.setup_output_region(root_region)
 
             scene.convertToPointCloud(graphics_filter, nodeset, output_coordinates, 0.0, 0.0, 10000.0, 1.0)
             # Create a graphic point in our rendition and set it's glyph type to axes.
             # Set the scene to our scene viewer.
-            self.createSurfaceGraphics(root_region)
+            self.create_surface_graphics(root_region)
             self._sceneviewer.setScene(scene)
 
             scene.endChange()
@@ -175,9 +185,9 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             self._sceneviewer.viewAll()
 
             self._sceneviewernotifier = self._sceneviewer.createSceneviewernotifier()
-            self._sceneviewernotifier.setCallback(self._zincSceneviewerEvent)
+            self._sceneviewernotifier.setCallback(self._zinc_scene_viewer_event)
 
-    def setupOutputRegion(self, root_region):
+    def setup_output_region(self, root_region):
         self._point_cloud_region = root_region.createChild('output')
         field_module = self._point_cloud_region.getFieldmodule()
         finite_element_field = field_module.createFieldFiniteElement(3)
@@ -196,13 +206,13 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
         attributes.setBaseSize([0.01])
 
-        return (nodeset, finite_element_field)
+        return nodeset, finite_element_field
 
-    def createSurfaceGraphics(self, region):
-        '''
-        To visualize the 3D finite element that we have created for each _surface_region, we use a 
+    def create_surface_graphics(self, region):
+        """
+        To visualize the 3D finite element that we have created for each _surface_region, we use a
         surface graphic then set a _material for that surface to use.
-        '''
+        """
         scene = region.getScene()
         # we iterate over the regions that we kept a handle to and use an index to get a
         # matching list of graphic _material names
@@ -224,10 +234,10 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         # define the initial position of the isosurface on the texture block
         self._iso_graphic.setListIsovalues([0.0])
 
-    def createMaterialUsingImageField(self):
-        ''' 
+    def create_material_using_image_field(self):
+        """
         Use an image field in a grpahics material to create a n OpenGL texture
-        '''
+        """
         # create a graphics material from the graphics module, assign it a name
         # and set flag to true
         material_module = self._context.getMaterialmodule()
@@ -256,7 +266,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         #        stream_information.setAttributeInteger(stream_information.IMAGE_ATTRIBUTE_, self.number_of_images)
 
         # Load images onto an invidual texture blocks.
-        directory = self._imageDataLocation.location()
+        directory = self._image_data_location.location()
         files = os.listdir(directory)
         files.sort(key=alphanum_key)
         for filename in files:
@@ -277,23 +287,23 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._segmented_field = field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1,
                                                                                       1, [0.5, 0.6111, 0.3889])
 
-    def _zincSceneviewerEvent(self, event):
-        '''
+    def _zinc_scene_viewer_event(self, event):
+        """
         Process a scene viewer event.  The updateGL() method is called for a
         repaint required event all other events are ignored.
-        '''
+        """
         if event.getChangeFlags() & Sceneviewerevent.CHANGE_FLAG_REPAINT_REQUIRED:
             QtCore.QTimer.singleShot(0, self.update)
 
-    def setSliderValue(self, value):
+    def set_slider_value(self, value):
         self._iso_graphic.setListIsovalues([value / 100.0])
 
     #         self.updateGL()
 
-    def createFiniteElements(self, region):
-        '''
+    def create_finite_elements(self, region):
+        """
         Create finite element meshes for each of the images
-        '''
+        """
         # Define the coordinates for each 3D element
         #        node_coordinate_set = [[0, 0, 0], [101, 0, 0], [0, 0, 52.0], [101, 0, 52.0], [0, 109, 0], [101, 109, 0], [0, 109, 52.0], [101, 109, 52.0]]
         #        a , b, c = 53.192, 49.288, 36.4
@@ -313,7 +323,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
 
         a, b, c = 1, 1, 1
         node_coordinate_set = [[0, 0, 0], [a, 0, 0], [0, b, 0], [a, b, 0], [0, 0, c], [a, 0, c], [0, b, c], [a, b, c]]
-        create3DFiniteElement(field_module, finite_element_field, node_coordinate_set)
+        create_3d_finite_element(field_module, finite_element_field, node_coordinate_set)
 
         self._scalar_field = field_module.createFieldComponent(finite_element_field, 3)
 
@@ -322,27 +332,27 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         field_module.endChange()
 
     def paintGL(self):
-        '''
+        """
         Render the scene for this scene viewer.  The QGLWidget has already set up the
         correct OpenGL buffer for us so all we need do is render into it.  The scene viewer
         will clear the background so any OpenGL drawing of your own needs to go after this
         API call.
-        '''
+        """
         self._sceneviewer.renderScene()
         # paintGL end
 
     # resizeGL start
     def resizeGL(self, width, height):
-        '''
+        """
         Respond to widget resize events.
-        '''
+        """
         self._sceneviewer.setViewportSize(width, height)
         # resizeGL end
 
     def mousePressEvent(self, event):
-        '''
+        """
         Inform the scene viewer of a mouse press event.
-        '''
+        """
         scene_input = self._sceneviewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
         scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_BUTTON_PRESS)
@@ -351,12 +361,10 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
 
         self._sceneviewer.processSceneviewerinput(scene_input)
 
-        self._handle_mouse_events = True
-
     def mouseReleaseEvent(self, event):
-        '''
+        """
         Inform the scene viewer of a mouse release event.
-        '''
+        """
         scene_input = self._sceneviewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
         scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_BUTTON_RELEASE)
@@ -365,10 +373,10 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._sceneviewer.processSceneviewerinput(scene_input)
 
     def mouseMoveEvent(self, event):
-        '''
+        """
         Inform the scene viewer of a mouse move event and update the OpenGL scene to reflect this
         change to the viewport.
-        '''
+        """
 
         scene_input = self._sceneviewer.createSceneviewerinput()
         scene_input.setPosition(event.x(), event.y())
@@ -379,11 +387,11 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._sceneviewer.processSceneviewerinput(scene_input)
 
 
-def create3DFiniteElement(fieldmodule, finite_element_field, node_coordinate_set):
-    '''
-    Create a single finite element using the supplied 
+def create_3d_finite_element(fieldmodule, finite_element_field, node_coordinate_set):
+    """
+    Create a single finite element using the supplied
     finite element field and node coordinate set.
-    '''
+    """
     # Find a special node set named 'nodes'
     nodeset = fieldmodule.findNodesetByName('nodes')
     node_template = nodeset.createNodetemplate()
