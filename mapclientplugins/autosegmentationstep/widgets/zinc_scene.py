@@ -69,6 +69,10 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._point_cloud_region = None
         self._iso_graphic = None
 
+        self._node_set = None
+        self._output_coordinates = None
+        self._graphics_filter = None
+
     def set_image_data_location(self, image_data_location):
         self._image_data_location = image_data_location
 
@@ -110,8 +114,8 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             self._scene_viewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
 
             # Create a filter for visibility flags which will allow us to see our graphic.
-            graphics_filter = self._context.getScenefiltermodule().createScenefilterVisibilityFlags()
-            self._scene_viewer.setScenefilter(graphics_filter)
+            self._graphics_filter = self._context.getScenefiltermodule().createScenefilterVisibilityFlags()
+            self._scene_viewer.setScenefilter(self._graphics_filter)
             root_region = self._context.getDefaultRegion()
             scene = root_region.getScene()
 
@@ -147,10 +151,8 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             self._segmentation_contour.setIsoscalarField(self._image_field)
             self._segmentation_contour.setListIsovalues([0.0])
 
-            nodeset, output_coordinates = self.setup_output_region(root_region)
+            self._node_set, self._output_coordinates = self.setup_output_region(root_region)
 
-            scene.convertToPointCloud(graphics_filter, nodeset, output_coordinates, 0.0, 0.0, 10000.0, 1.0)
-            # Create a graphic point in our rendition and set it's glyph type to axes.
             # Set the scene to our scene viewer.
             self.create_surface_graphics(root_region)
             self._scene_viewer.setScene(scene)
@@ -199,6 +201,13 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         attributes.setBaseSize([0.01])
 
         return nodeset, finite_element_field
+
+    def generate_points(self):
+        self._node_set.destroyAllNodes()
+        self.set_image_plane_visibility(0)
+        scene = self._context.getDefaultRegion().getScene()
+        scene.convertToPointCloud(self._graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, 10000.0, 1.0)
+        self.set_image_plane_visibility(1)
 
     def create_surface_graphics(self, region):
         """

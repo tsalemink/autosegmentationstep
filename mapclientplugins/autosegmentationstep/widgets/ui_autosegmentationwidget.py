@@ -153,6 +153,11 @@ class Ui_AutoSegmentationWidget(object):
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.generatePointsButton = QPushButton(AutoSegmentationWidget)
+        self.generatePointsButton.setObjectName(u"generatePointsButton")
+
+        self.horizontalLayout.addWidget(self.generatePointsButton)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
@@ -179,6 +184,7 @@ class Ui_AutoSegmentationWidget(object):
         self.imagePlaneCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane", None))
         self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
         self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))
+        self.generatePointsButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Generate Points", None))
         self.doneButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"&Done", None))
     # retranslateUi
 

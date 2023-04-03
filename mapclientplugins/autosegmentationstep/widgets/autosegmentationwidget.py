@@ -44,6 +44,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.imagePlaneCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_image_plane_visibility)
         self._ui.segmentationCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_point_cloud_visibility)
+        self._ui.generatePointsButton.clicked.connect(self._ui.zincSceneViewer.generate_points)
 
     def register_done_execution(self, callback):
         self._ui.doneButton.clicked.connect(callback)
