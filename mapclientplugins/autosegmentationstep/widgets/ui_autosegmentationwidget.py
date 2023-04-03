@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
     QSizePolicy, QSlider, QSpacerItem, QVBoxLayout,
     QWidget)
 
-from mapclientplugins.autosegmentationstep.widgets.zinc_scene import ZincScene
+from mapclientplugins.autosegmentationstep.widgets.zincautosegmentationwidget import ZincAutoSegmentationWidget
 
 class Ui_AutoSegmentationWidget(object):
     def setupUi(self, AutoSegmentationWidget):
@@ -38,15 +38,15 @@ class Ui_AutoSegmentationWidget(object):
         self.groupBox.setSizePolicy(sizePolicy)
         self.gridLayout = QGridLayout(self.groupBox)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.zincSceneViewer = ZincScene(self.groupBox)
-        self.zincSceneViewer.setObjectName(u"zincSceneViewer")
+        self.zincWidget = ZincAutoSegmentationWidget(self.groupBox)
+        self.zincWidget.setObjectName(u"zincWidget")
         sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy1.setHorizontalStretch(1)
         sizePolicy1.setVerticalStretch(1)
-        sizePolicy1.setHeightForWidth(self.zincSceneViewer.sizePolicy().hasHeightForWidth())
-        self.zincSceneViewer.setSizePolicy(sizePolicy1)
+        sizePolicy1.setHeightForWidth(self.zincWidget.sizePolicy().hasHeightForWidth())
+        self.zincWidget.setSizePolicy(sizePolicy1)
 
-        self.gridLayout.addWidget(self.zincSceneViewer, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.zincWidget, 0, 1, 1, 1)
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
@@ -60,7 +60,7 @@ class Ui_AutoSegmentationWidget(object):
         self.verticalLayout_5.setSpacing(6)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.verticalLayout_5.setSizeConstraint(QLayout.SetDefaultConstraint)
-        self.verticalLayout_5.setContentsMargins(5, -1, 5, -1)
+        self.verticalLayout_5.setContentsMargins(10, -1, 10, -1)
         self.label = QLabel(self.groupBox)
         self.label.setObjectName(u"label")
         sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -98,8 +98,8 @@ class Ui_AutoSegmentationWidget(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
         self.label_2.setSizePolicy(sizePolicy3)
-        self.label_2.setMinimumSize(QSize(90, 26))
-        self.label_2.setMaximumSize(QSize(90, 26))
+        self.label_2.setMinimumSize(QSize(100, 26))
+        self.label_2.setMaximumSize(QSize(100, 26))
         self.label_2.setAlignment(Qt.AlignCenter)
         self.label_2.setWordWrap(True)
 

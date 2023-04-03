@@ -22,3 +22,5 @@ __author__ = 'Hugh Sorby'
 __stepname__ = 'Automatic Segmenter'
 
 from mapclientplugins.autosegmentationstep import step
+
+from . import resources_rc

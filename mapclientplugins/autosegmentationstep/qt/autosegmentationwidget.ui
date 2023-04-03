@@ -27,7 +27,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="1">
-       <widget class="ZincScene" name="zincSceneViewer" native="true">
+       <widget class="ZincAutoSegmentationWidget" name="zincWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>1</horstretch>
@@ -62,10 +62,10 @@
              <enum>QLayout::SetDefaultConstraint</enum>
             </property>
             <property name="leftMargin">
-             <number>5</number>
+             <number>10</number>
             </property>
             <property name="rightMargin">
-             <number>5</number>
+             <number>10</number>
             </property>
             <item>
              <widget class="QLabel" name="label">
@@ -135,13 +135,13 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>90</width>
+                <width>100</width>
                 <height>26</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
-                <width>90</width>
+                <width>100</width>
                 <height>26</height>
                </size>
               </property>
@@ -257,9 +257,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ZincScene</class>
+   <class>ZincAutoSegmentationWidget</class>
    <extends>QWidget</extends>
-   <header>mapclientplugins/autosegmentationstep/widgets/zinc_scene.h</header>
+   <header>mapclientplugins/autosegmentationstep/widgets/zincautosegmentationwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

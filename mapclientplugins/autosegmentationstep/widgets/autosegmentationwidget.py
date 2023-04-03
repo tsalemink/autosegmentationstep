@@ -34,20 +34,20 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self._ui = Ui_AutoSegmentationWidget()
         self._ui.setupUi(self)
-        self._ui.zincSceneViewer.set_image_data_location(image_data_location)
+        self._ui.zincWidget.set_image_data_location(image_data_location)
 
         self._make_connections()
 
     def _make_connections(self):
-        self._ui.isoValueSlider.valueChanged.connect(self._ui.zincSceneViewer.set_slider_value)
-        self._ui.segmentationValueSlider.valueChanged.connect(self._ui.zincSceneViewer.set_segmentation_value)
-        self._ui.imagePlaneCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_image_plane_visibility)
-        self._ui.segmentationCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_segmentation_visibility)
-        self._ui.pointCloudCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_point_cloud_visibility)
-        self._ui.generatePointsButton.clicked.connect(self._ui.zincSceneViewer.generate_points)
+        self._ui.isoValueSlider.valueChanged.connect(self._ui.zincWidget.set_slider_value)
+        self._ui.segmentationValueSlider.valueChanged.connect(self._ui.zincWidget.set_segmentation_value)
+        self._ui.imagePlaneCheckBox.stateChanged.connect(self._ui.zincWidget.set_image_plane_visibility)
+        self._ui.segmentationCheckBox.stateChanged.connect(self._ui.zincWidget.set_segmentation_visibility)
+        self._ui.pointCloudCheckBox.stateChanged.connect(self._ui.zincWidget.set_point_cloud_visibility)
+        self._ui.generatePointsButton.clicked.connect(self._ui.zincWidget.generate_points)
 
     def register_done_execution(self, callback):
         self._ui.doneButton.clicked.connect(callback)
 
     def get_point_cloud(self):
-        return self._ui.zincSceneViewer.get_point_cloud()
+        return self._ui.zincWidget.get_point_cloud()

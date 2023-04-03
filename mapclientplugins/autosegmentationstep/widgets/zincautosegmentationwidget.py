@@ -44,7 +44,7 @@ def alphanum_key(s):
     return [try_int(c) for c in re.split('([0-9]+)', s)]
 
 
-class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
+class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         """
         Call the super class init functions, create a Zinc context and set the scene viewer handle to None.
@@ -162,7 +162,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             self._scene_viewer.viewAll()
 
             self._scene_viewer_notifier = self._scene_viewer.createSceneviewernotifier()
-            self._scene_viewer_notifier.setCallback(self._zinc_scene_viewer_event)
+            self._scene_viewer_notifier.setCallback(self._zinc_widget_event)
 
     def define_standard_glyphs(self):
         glyph_module = self._context.getGlyphmodule()
@@ -285,7 +285,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._segmented_field = field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1,
                                                                                       1, [0.5, 0.6111, 0.3889])
 
-    def _zinc_scene_viewer_event(self, event):
+    def _zinc_widget_event(self, event):
         """
         Process a scene viewer event.  The updateGL() method is called for a
         repaint required event all other events are ignored.
