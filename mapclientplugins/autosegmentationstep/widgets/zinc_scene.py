@@ -64,8 +64,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._scalar_field = None
 
         self._material = None
-        self._contour = None
-        self._iso_graphic = None
+        self._segmentation_contour = None
         self._point_cloud = None
         self._point_cloud_region = None
         self._iso_graphic = None
@@ -99,7 +98,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         self._iso_graphic.setVisibilityFlag(state != 0)
 
     def set_segmentation_visibility(self, state):
-        self._contour.setVisibilityFlag(state != 0)
+        self._segmentation_contour.setVisibilityFlag(state != 0)
 
     def set_point_cloud_visibility(self, state):
         self._point_cloud.setVisibilityFlag(state != 0)
@@ -108,28 +107,16 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         if self._scene_viewer is None:
             # From the context get the default scene viewer module.
             scene_viewer_module = self._context.getSceneviewermodule()
-
-            # From the scene viewer module we can create a scene viewer, we set up the scene viewer to have the same OpenGL properties as
-            # the QGLWidget.
             self._scene_viewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
-            self._scene_viewer.setProjectionMode(Sceneviewer.PROJECTION_MODE_PERSPECTIVE)
 
             # Create a filter for visibility flags which will allow us to see our graphic.
-            filter_module = self._context.getScenefiltermodule()
-            # By default graphics are created with their visibility flags set to on (or true).
-            graphics_filter = filter_module.createScenefilterVisibilityFlags()
-
-            # Set the graphics filter for the scene viewer otherwise nothing will be visible.
+            graphics_filter = self._context.getScenefiltermodule().createScenefilterVisibilityFlags()
             self._scene_viewer.setScenefilter(graphics_filter)
             root_region = self._context.getDefaultRegion()
             scene = root_region.getScene()
 
-            glyph_module = self._context.getGlyphmodule()
-            glyph_module.defineStandardGlyphs()
-
-            material_module = self._context.getMaterialmodule()
-            material_module.defineStandardMaterials()
-            gold = material_module.findMaterialByName('gold')
+            self.define_standard_glyphs()
+            self.define_standard_materials()
 
             # Once the renditions have been enabled for a region tree you can get a valid
             # handle for a rendition and create graphics for it.
@@ -146,23 +133,19 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
             self.create_material_using_image_field()
 
             field_module = root_region.getFieldmodule()
-            #             xi_field = field_module.findFieldByName('xi')
+            xi_field = field_module.findFieldByName('xi')
             finite_element_field = field_module.findFieldByName('coordinates')
             self._segmented_image_field = field_module.createFieldImageFromSource(self._segmented_field)
 
             # Visualise the outline.
-            self._create_image_outline(finite_element_field)
+            self._create_outline_graphics(scene, finite_element_field)
 
-            self._contour = scene.createGraphicsContours()
-            self._contour.setCoordinateField(finite_element_field)
-            self._contour.setTessellation(tessellation)
-            #             self._contour.setMaterial(self._material)
-            #             print(self._contour2.setTextureCoordinateField(xi_field))
-            # set the yz scalar field to our isosurface
-            self._contour.setIsoscalarField(self._segmented_image_field)
-            self._contour.setMaterial(gold)
-            # define the initial position of the isosurface on the texture block
-            self._contour.setListIsovalues([0.2])  # Range(1, self.initial_positions[0], self.initial_positions[0])
+            self._segmentation_contour = scene.createGraphicsContours()
+            self._segmentation_contour.setCoordinateField(xi_field)
+            self._segmentation_contour.setTessellation(tessellation)
+
+            self._segmentation_contour.setIsoscalarField(self._image_field)
+            self._segmentation_contour.setListIsovalues([0.0])
 
             nodeset, output_coordinates = self.setup_output_region(root_region)
 
@@ -178,6 +161,23 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
 
             self._scene_viewer_notifier = self._scene_viewer.createSceneviewernotifier()
             self._scene_viewer_notifier.setCallback(self._zinc_scene_viewer_event)
+
+    def define_standard_glyphs(self):
+        glyph_module = self._context.getGlyphmodule()
+        glyph_module.defineStandardGlyphs()
+
+    def define_standard_materials(self):
+        material_module = self._context.getMaterialmodule()
+        material_module.defineStandardMaterials()
+
+    def _create_outline_graphics(self, scene, finite_element_field):
+        scene.beginChange()
+        outline = scene.createGraphicsLines()
+        outline.setCoordinateField(finite_element_field)
+        outline.setName('element_outline')
+        scene.endChange()
+
+        return outline
 
     def setup_output_region(self, root_region):
         self._point_cloud_region = root_region.createChild('output')
@@ -199,17 +199,6 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         attributes.setBaseSize([0.01])
 
         return nodeset, finite_element_field
-
-    def _create_image_outline(self, finite_element_field):
-        scene = self._context.getDefaultRegion().getScene()
-
-        scene.beginChange()
-        outline = scene.createGraphicsLines()
-        outline.setCoordinateField(finite_element_field)
-        outline.setName('element_outline')
-        scene.endChange()
-
-        return outline
 
     def create_surface_graphics(self, region):
         """
@@ -260,7 +249,7 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
         #        self._image_field.setName('image_field')
 
         self._image_field.setFilterMode(FieldImage.FILTER_MODE_LINEAR)
-        self._image_field.setWrapMode(FieldImage.WRAP_MODE_REPEAT)
+        self._image_field.setWrapMode(FieldImage.WRAP_MODE_CLAMP)
 
         # Create a stream information object that we can use to read the
         # image file from disk
@@ -279,9 +268,6 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
                 stream_information.createStreamresourceFile(string_name)
 
         # Actually read in the image file into the image field.
-        #         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_WIDTH_PIXELS, 1)
-        #         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_HEIGHT_PIXELS, 1)
-        #         self._image_field.setAttributeReal(FieldImage.IMAGE_ATTRIBUTE_PHYSICAL_DEPTH_PIXELS, 1)
         self._image_field.read(stream_information)
         self._material.setTextureField(1, self._image_field)
 
@@ -301,7 +287,8 @@ class ZincScene(QtOpenGLWidgets.QOpenGLWidget):
     def set_slider_value(self, value):
         self._iso_graphic.setListIsovalues([value / 100.0])
 
-    #         self.updateGL()
+    def set_segmentation_value(self, value):
+        self._segmentation_contour.setListIsovalues([value / 10000.0])
 
     def create_finite_elements(self, region):
         """

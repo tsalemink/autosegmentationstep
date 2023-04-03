@@ -40,6 +40,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def _make_connections(self):
         self._ui.isoValueSlider.valueChanged.connect(self._ui.zincSceneViewer.set_slider_value)
+        self._ui.segmentationValueSlider.valueChanged.connect(self._ui.zincSceneViewer.set_segmentation_value)
         self._ui.imagePlaneCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_image_plane_visibility)
         self._ui.segmentationCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._ui.zincSceneViewer.set_point_cloud_visibility)

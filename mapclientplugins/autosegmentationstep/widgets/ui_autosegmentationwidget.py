@@ -37,6 +37,16 @@ class Ui_AutoSegmentationWidget(object):
         self.groupBox.setSizePolicy(sizePolicy)
         self.gridLayout = QGridLayout(self.groupBox)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.zincSceneViewer = ZincScene(self.groupBox)
+        self.zincSceneViewer.setObjectName(u"zincSceneViewer")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy1.setHorizontalStretch(1)
+        sizePolicy1.setVerticalStretch(1)
+        sizePolicy1.setHeightForWidth(self.zincSceneViewer.sizePolicy().hasHeightForWidth())
+        self.zincSceneViewer.setSizePolicy(sizePolicy1)
+
+        self.gridLayout.addWidget(self.zincSceneViewer, 0, 1, 1, 1)
+
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.horizontalLayout_2 = QHBoxLayout()
@@ -55,6 +65,17 @@ class Ui_AutoSegmentationWidget(object):
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_3)
+
+        self.segmentationValueSlider = QSlider(self.groupBox)
+        self.segmentationValueSlider.setObjectName(u"segmentationValueSlider")
+        self.segmentationValueSlider.setMaximum(10000)
+        self.segmentationValueSlider.setOrientation(Qt.Vertical)
+
+        self.horizontalLayout_2.addWidget(self.segmentationValueSlider)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_5)
 
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_2)
@@ -84,16 +105,6 @@ class Ui_AutoSegmentationWidget(object):
 
 
         self.gridLayout.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
-
-        self.zincSceneViewer = ZincScene(self.groupBox)
-        self.zincSceneViewer.setObjectName(u"zincSceneViewer")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sizePolicy1.setHorizontalStretch(1)
-        sizePolicy1.setVerticalStretch(1)
-        sizePolicy1.setHeightForWidth(self.zincSceneViewer.sizePolicy().hasHeightForWidth())
-        self.zincSceneViewer.setSizePolicy(sizePolicy1)
-
-        self.gridLayout.addWidget(self.zincSceneViewer, 0, 1, 1, 1)
 
 
         self.verticalLayout.addWidget(self.groupBox)
