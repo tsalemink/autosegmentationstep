@@ -27,14 +27,10 @@ from mapclientplugins.autosegmentationstep.widgets.autosegmentationwidget import
 
 
 class AutoSegmentationStep(WorkflowStepMountPoint):
-    """
-    Skeleton step which is intended to be used as a starting point
-    for new steps.
-    """
-
     def __init__(self, location):
         super(AutoSegmentationStep, self).__init__('Automatic Segmenter', location)
-        self._state = StepState()
+        self._configured = True
+        self._category = 'Segmentation'
         self._icon = QtGui.QImage(':/autosegmentation/images/autoseg.png')
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
@@ -42,17 +38,11 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#pointcloud'))
-
-        # The widget will be the interface widget for the user to see the
-        # autosegmentation step and interact with it.
-        self._widget = None
-        self._category = 'Segmentation'
-
-        # This step only requires an identifier which we can generate from
-        # a char set.  This makes the configuration of the step trivial.
+        self._state = StepState()
         self._identifier = generate_identifier()
-        self._configured = True
-        self._dataIn = None
+
+        self._widget = None
+        self._input_image_data = None
 
     def configure(self):
         return self._configured
@@ -71,12 +61,12 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
 
     def execute(self):
         if not self._widget:
-            self._widget = AutoSegmentationWidget(self._dataIn)
+            self._widget = AutoSegmentationWidget(self._input_image_data)
             self._widget.register_done_execution(self._doneExecution)
         self._setCurrentWidget(self._widget)
 
     def setPortData(self, port_id, data_in):
-        self._dataIn = data_in
+        self._input_image_data = data_in
 
     def getPortData(self, index):
         point_cloud = self._widget.get_point_cloud()
