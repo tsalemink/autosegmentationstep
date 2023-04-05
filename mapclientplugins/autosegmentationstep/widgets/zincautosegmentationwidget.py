@@ -1,32 +1,15 @@
 import os
 import re
 
-from PySide6 import QtCore, QtOpenGLWidgets
+from PySide6 import QtCore
 
 from opencmiss.zinc.context import Context
-from opencmiss.zinc.sceneviewer import Sceneviewer, Sceneviewerevent
 from opencmiss.zinc.sceneviewerinput import Sceneviewerinput
 from opencmiss.zinc.field import Field, FieldImage
 from opencmiss.zinc.element import Element, Elementbasis
 from opencmiss.zinc.glyph import Glyph
 
-
-button_map = {
-    QtCore.Qt.MouseButton.LeftButton: Sceneviewerinput.BUTTON_TYPE_LEFT,
-    QtCore.Qt.MouseButton.MiddleButton: Sceneviewerinput.BUTTON_TYPE_MIDDLE,
-    QtCore.Qt.MouseButton.RightButton: Sceneviewerinput.BUTTON_TYPE_RIGHT
-}
-
-
-def modifier_map(qt_modifiers):
-    """
-    Return a Zinc SceneViewerInput modifiers object that is created from the Qt modifier flags passed in.
-    """
-    modifiers = Sceneviewerinput.MODIFIER_FLAG_NONE
-    if qt_modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier:
-        modifiers = modifiers | Sceneviewerinput.MODIFIER_FLAG_SHIFT
-
-    return modifiers
+from opencmiss.zincwidgets.basesceneviewerwidget import BaseSceneviewerWidget
 
 
 def try_int(s):
@@ -44,17 +27,15 @@ def alphanum_key(s):
     return [try_int(c) for c in re.split('([0-9]+)', s)]
 
 
-class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
+class ZincAutoSegmentationWidget(BaseSceneviewerWidget):
     def __init__(self, parent=None):
         """
         Call the super class init functions, create a Zinc context and set the scene viewer handle to None.
         """
-        QtOpenGLWidgets.QOpenGLWidget.__init__(self, parent)
+        super().__init__(parent)
 
         self._context = Context("autosegmenter")
 
-        self._scene_viewer = None
-        self._scene_viewer_notifier = None
         self._image_data_location = None
 
         self._image_field = None
@@ -71,7 +52,6 @@ class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         self._node_set = None
         self._output_coordinates = None
-        self._graphics_filter = None
 
     def set_image_data_location(self, image_data_location):
         self._image_data_location = image_data_location
@@ -108,61 +88,54 @@ class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._point_cloud.setVisibilityFlag(state != 0)
 
     def initializeGL(self):
-        if self._scene_viewer is None:
-            # From the context get the default scene viewer module.
-            scene_viewer_module = self._context.getSceneviewermodule()
-            self._scene_viewer = scene_viewer_module.createSceneviewer(Sceneviewer.BUFFERING_MODE_DOUBLE, Sceneviewer.STEREO_MODE_MONO)
+        super().initializeGL()
+        self.initialize_graphics()
 
-            # Create a filter for visibility flags which will allow us to see our graphic.
-            self._graphics_filter = self._context.getScenefiltermodule().createScenefilterVisibilityFlags()
-            self._scene_viewer.setScenefilter(self._graphics_filter)
-            root_region = self._context.getDefaultRegion()
-            scene = root_region.getScene()
+    def initialize_graphics(self):
+        root_region = self._context.getDefaultRegion()
+        scene = root_region.getScene()
 
-            self.define_standard_glyphs()
-            self.define_standard_materials()
+        self.define_standard_glyphs()
+        self.define_standard_materials()
 
-            # Once the renditions have been enabled for a region tree you can get a valid
-            # handle for a rendition and create graphics for it.
-            tessellation_module = self._context.getTessellationmodule()
-            tessellation = tessellation_module.createTessellation()
-            tessellation.setMinimumDivisions([64])
-            #             tessellation_module.setDefaultTessellation(tessellation)
+        # Once the renditions have been enabled for a region tree you can get a valid
+        # handle for a rendition and create graphics for it.
+        tessellation_module = self._context.getTessellationmodule()
+        tessellation = tessellation_module.createTessellation()
+        tessellation.setMinimumDivisions([64])
+        #             tessellation_module.setDefaultTessellation(tessellation)
 
-            # We use the beginChange and endChange to wrap any immediate changes and streamline the rendering of the scene.
-            scene.beginChange()
+        # We use the beginChange and endChange to wrap any immediate changes and streamline the rendering of the scene.
+        scene.beginChange()
 
-            # Visualise images
-            self.create_finite_elements(root_region)
-            self.create_material_using_image_field()
+        # Visualise images
+        self.create_finite_elements(root_region)
+        self.create_material_using_image_field()
 
-            field_module = root_region.getFieldmodule()
-            xi_field = field_module.findFieldByName('xi')
-            finite_element_field = field_module.findFieldByName('coordinates')
-            self._segmented_image_field = field_module.createFieldImageFromSource(self._segmented_field)
+        field_module = root_region.getFieldmodule()
+        xi_field = field_module.findFieldByName('xi')
+        finite_element_field = field_module.findFieldByName('coordinates')
+        self._segmented_image_field = field_module.createFieldImageFromSource(self._segmented_field)
 
-            # Visualise the outline.
-            self._create_outline_graphics(scene, finite_element_field)
+        # Visualise the outline.
+        self._create_outline_graphics(scene, finite_element_field)
 
-            self._segmentation_contour = scene.createGraphicsContours()
-            self._segmentation_contour.setCoordinateField(xi_field)
-            self._segmentation_contour.setTessellation(tessellation)
+        self._segmentation_contour = scene.createGraphicsContours()
+        self._segmentation_contour.setCoordinateField(xi_field)
+        self._segmentation_contour.setTessellation(tessellation)
 
-            self._segmentation_contour.setIsoscalarField(self._image_field)
-            self._segmentation_contour.setListIsovalues([0.0])
+        self._segmentation_contour.setIsoscalarField(self._image_field)
+        self._segmentation_contour.setListIsovalues([0.0])
 
-            self._node_set, self._output_coordinates = self.setup_output_region(root_region)
+        self._node_set, self._output_coordinates = self.setup_output_region(root_region)
 
-            # Set the scene to our scene viewer.
-            self.create_surface_graphics(root_region)
-            self._scene_viewer.setScene(scene)
+        # Set the scene to our scene viewer.
+        self.create_surface_graphics(root_region)
+        self.set_scene(scene)
 
-            scene.endChange()
+        scene.endChange()
 
-            self._scene_viewer.viewAll()
-
-            self._scene_viewer_notifier = self._scene_viewer.createSceneviewernotifier()
-            self._scene_viewer_notifier.setCallback(self._zinc_widget_event)
+        self._sceneviewer.viewAll()
 
     def define_standard_glyphs(self):
         glyph_module = self._context.getGlyphmodule()
@@ -206,7 +179,8 @@ class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._node_set.destroyAllNodes()
         self.set_image_plane_visibility(0)
         scene = self._context.getDefaultRegion().getScene()
-        scene.convertToPointCloud(self._graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, 10000.0, 1.0)
+        graphics_filter = self._sceneviewer.getScenefilter()
+        scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, 10000.0, 1.0)
         self.set_image_plane_visibility(1)
 
     def create_surface_graphics(self, region):
@@ -285,14 +259,6 @@ class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._segmented_field = field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1,
                                                                                       1, [0.5, 0.6111, 0.3889])
 
-    def _zinc_widget_event(self, event):
-        """
-        Process a scene viewer event.  The updateGL() method is called for a
-        repaint required event all other events are ignored.
-        """
-        if event.getChangeFlags() & Sceneviewerevent.CHANGE_FLAG_REPAINT_REQUIRED:
-            QtCore.QTimer.singleShot(0, self.update)
-
     def set_slider_value(self, value):
         self._iso_graphic.setListIsovalues([value / 100.0])
 
@@ -303,11 +269,6 @@ class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         Create finite element meshes for each of the images
         """
-        # Define the coordinates for each 3D element
-        #        node_coordinate_set = [[0, 0, 0], [101, 0, 0], [0, 0, 52.0], [101, 0, 52.0], [0, 109, 0], [101, 109, 0], [0, 109, 52.0], [101, 109, 52.0]]
-        #        a , b, c = 53.192, 49.288, 36.4
-        #        node_coordinate_set = [[a, 0, 0], [a, 0, c], [0, 0, 0], [0, 0, c], [a, b, 0], [a, b, c], [0, b, 0], [0, b, c]]
-        #        a , b, c = 101, 109, 52
         field_module = region.getFieldmodule()
         field_module.beginChange()
 
@@ -329,61 +290,6 @@ class ZincAutoSegmentationWidget(QtOpenGLWidgets.QOpenGLWidget):
         field_module.defineAllFaces()
 
         field_module.endChange()
-
-    def paintGL(self):
-        """
-        Render the scene for this scene viewer.  The QGLWidget has already set up the
-        correct OpenGL buffer for us so all we need do is render into it.  The scene viewer
-        will clear the background so any OpenGL drawing of your own needs to go after this
-        API call.
-        """
-        self._scene_viewer.renderScene()
-        # paintGL end
-
-    # resizeGL start
-    def resizeGL(self, width, height):
-        """
-        Respond to widget resize events.
-        """
-        self._scene_viewer.setViewportSize(width, height)
-        # resizeGL end
-
-    def mousePressEvent(self, event):
-        """
-        Inform the scene viewer of a mouse press event.
-        """
-        scene_input = self._scene_viewer.createSceneviewerinput()
-        scene_input.setPosition(event.x(), event.y())
-        scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_BUTTON_PRESS)
-        scene_input.setButtonType(button_map[event.button()])
-        scene_input.setModifierFlags(modifier_map(event.modifiers()))
-
-        self._scene_viewer.processSceneviewerinput(scene_input)
-
-    def mouseReleaseEvent(self, event):
-        """
-        Inform the scene viewer of a mouse release event.
-        """
-        scene_input = self._scene_viewer.createSceneviewerinput()
-        scene_input.setPosition(event.x(), event.y())
-        scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_BUTTON_RELEASE)
-        scene_input.setButtonType(button_map[event.button()])
-
-        self._scene_viewer.processSceneviewerinput(scene_input)
-
-    def mouseMoveEvent(self, event):
-        """
-        Inform the scene viewer of a mouse move event and update the OpenGL scene to reflect this
-        change to the viewport.
-        """
-
-        scene_input = self._scene_viewer.createSceneviewerinput()
-        scene_input.setPosition(event.x(), event.y())
-        scene_input.setEventType(Sceneviewerinput.EVENT_TYPE_MOTION_NOTIFY)
-        if event.type() == QtCore.QEvent.Type.Leave:
-            scene_input.setPosition(-1, -1)
-
-        self._scene_viewer.processSceneviewerinput(scene_input)
 
 
 def create_3d_finite_element(fieldmodule, finite_element_field, node_coordinate_set):

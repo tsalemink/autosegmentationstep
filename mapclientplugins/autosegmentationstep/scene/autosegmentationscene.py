@@ -6,5 +6,5 @@ Created: April, 2023
 
 
 class AutoSegmentationScene(object):
-    def __init__(self):
-        pass
+    def __init__(self, model):
+        self._model = model

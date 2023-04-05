@@ -1,24 +1,14 @@
 """
-MAP Client, a program to generate detailed musculoskeletal models for OpenSim.
-    Copyright (C) 2012  University of Auckland
+Created: April, 2023
 
-This file is part of MAP Client. (http://launchpad.net/mapclient)
-
-    MAP Client is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    MAP Client is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with MAP Client.  If not, see <http://www.gnu.org/licenses/>..
+@author: tsalemink
 """
 from PySide6 import QtWidgets
 
+from opencmiss.zincwidgets.handlers.scenemanipulation import SceneManipulation
+
+from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
+from mapclientplugins.autosegmentationstep.scene.autosegmentationscene import AutoSegmentationScene
 from mapclientplugins.autosegmentationstep.widgets.ui_autosegmentationwidget import Ui_AutoSegmentationWidget
 
 
@@ -34,7 +24,18 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self._ui = Ui_AutoSegmentationWidget()
         self._ui.setupUi(self)
+
+        # TODO: Will be replaced by model.
         self._ui.zincWidget.set_image_data_location(image_data_location)
+
+        self._model = AutoSegmentationModel(image_data_location)
+        self._scene = AutoSegmentationScene(self._model)
+        self._view = self._ui.zincWidget
+
+        # TODO: Temporarily get the context from the view.
+        # self._view.set_context(self._model.get_context())
+        self._view.set_context(self._view._context)
+        self._view.register_handler(SceneManipulation())
 
         self._make_connections()
 
