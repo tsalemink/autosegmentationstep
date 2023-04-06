@@ -57,6 +57,3 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def get_output_filename(self):
         return self._model.get_output_filename()
-
-    def get_point_cloud(self):
-        return self._model.get_point_cloud()

@@ -11,45 +11,85 @@ class AutoSegmentationScene(object):
     def __init__(self, model):
         self._model = model
         self._context = model.get_context()
+        self._root_scene = model.get_root_scene()
+        self._output_scene = model.get_output_scene()
+        self._dimensions = model.get_dimensions()
+        self._output_coordinates = model.get_output_coordinates()
+        self._node_set = model.get_node_set()
 
-        self._iso_graphic = None
-        self._segmentation_contour = None
-        self._point_cloud = None
+        # Initialize the graphics.
+        self._create_outline_graphics()
+        self._iso_graphic = self._create_surface_graphics()
+        self._segmentation_contour = self._create_segmentation_graphics()
+        self._point_cloud = self._create_point_cloud_graphics()
+
+    def _create_outline_graphics(self):
+        field_module = self._model.get_field_module()
+        finite_element_field = field_module.findFieldByName('coordinates')
+
+        self._root_scene.beginChange()
+        outline = self._root_scene.createGraphicsLines()
+        outline.setCoordinateField(finite_element_field)
+        outline.setName('element_outline')
+        self._root_scene.endChange()
+
+        return outline
+
+    def _create_surface_graphics(self):
+        field_module = self._model.get_field_module()
+        finite_element_field = field_module.findFieldByName('coordinates')
+        xi_field = field_module.findFieldByName('xi')
+        scalar_field = self._model.get_scalar_field()
+        image_field = self._model.get_image_field()
+
+        material_module = self._context.getMaterialmodule()
+        material = material_module.createMaterial()
+        material.setName('texture_block')
+        material.setTextureField(1, image_field)
+
+        self._root_scene.beginChange()
+        iso_graphic = self._root_scene.createGraphicsContours()
+        iso_graphic.setCoordinateField(finite_element_field)
+        iso_graphic.setMaterial(material)
+        iso_graphic.setTextureCoordinateField(xi_field)
+        iso_graphic.setIsoscalarField(scalar_field)
+        iso_graphic.setListIsovalues([0.0])
+        self._root_scene.endChange()
+
+        return iso_graphic
+
+    def _create_segmentation_graphics(self):
+        field_module = self._model.get_field_module()
+        scale_field = self._model.get_field_module().createFieldConstant(self._dimensions)
+        xi_field = field_module.findFieldByName('xi')
+        scaled_xi_field = xi_field * scale_field
+        image_field = self._model.get_image_field()
 
         tessellation_module = self._context.getTessellationmodule()
         tessellation = tessellation_module.createTessellation()
         tessellation.setMinimumDivisions([64])
 
-        scene = self._model.get_scene()
+        self._root_scene.beginChange()
+        segmentation_contour = self._root_scene.createGraphicsContours()
+        segmentation_contour.setCoordinateField(scaled_xi_field)
+        segmentation_contour.setTessellation(tessellation)
+        segmentation_contour.setIsoscalarField(image_field)
+        segmentation_contour.setListIsovalues([0.0])
+        self._root_scene.endChange()
 
-        scene.beginChange()
+        return segmentation_contour
 
-        field_module = self._model.get_field_module()
-        xi_field = field_module.findFieldByName('xi')
+    def _create_point_cloud_graphics(self):
+        self._output_scene.beginChange()
+        point_cloud = self._output_scene.createGraphicsPoints()
+        point_cloud.setFieldDomainType(Field.DOMAIN_TYPE_NODES)
+        point_cloud.setCoordinateField(self._output_coordinates)
+        attributes = point_cloud.getGraphicspointattributes()
+        attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
+        attributes.setBaseSize([min(self._dimensions) / 100])
+        self._output_scene.endChange()
 
-        # Visualise the outline.
-        self._create_outline_graphics(scene)
-
-        # Get dimensions.
-        self._dimensions = self._model.get_dimensions()
-
-        # Scale the segmentation fields.
-        scale_field = self._model.get_field_module().createFieldConstant(self._model.get_dimensions())
-        self._scaled_xi_field = xi_field * scale_field
-
-        image_field = self._model.get_image_field()
-        self._segmentation_contour = scene.createGraphicsContours()
-        self._segmentation_contour.setCoordinateField(self._scaled_xi_field)
-        self._segmentation_contour.setTessellation(tessellation)
-        self._segmentation_contour.setIsoscalarField(image_field)
-        self._segmentation_contour.setListIsovalues([0.0])
-
-        self._node_set, self._output_coordinates = self.setup_output_region()
-
-        # Set the scene to our scene viewer.
-        self.create_surface_graphics(self._model.get_root_region())
-
-        scene.endChange()
+        return point_cloud
 
     def set_image_plane_visibility(self, state):
         self._iso_graphic.setVisibilityFlag(state != 0)
@@ -67,60 +107,6 @@ class AutoSegmentationScene(object):
         self._segmentation_contour.setListIsovalues([value / 10000.0])
 
     def generate_points(self):
-        self._node_set.destroyAllNodes()
         self.set_image_plane_visibility(0)
-        scene = self._context.getDefaultRegion().getScene()
-        graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
-        surface_density = 10000 / min(self._dimensions) ** 2
-        scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, surface_density, 1.0)
+        self._model.generate_points()
         self.set_image_plane_visibility(1)
-
-    def create_surface_graphics(self, region):
-        scene = region.getScene()
-        field_module = region.getFieldmodule()
-        finite_element_field = field_module.findFieldByName('coordinates')
-
-        material = self._model.get_material()
-        scalar_field = self._model.get_scalar_field()
-
-        self._iso_graphic = scene.createGraphicsContours()
-        self._iso_graphic.setCoordinateField(finite_element_field)
-        self._iso_graphic.setMaterial(material)
-        xi_field = field_module.findFieldByName('xi')
-        self._iso_graphic.setTextureCoordinateField(xi_field)
-        self._iso_graphic.setIsoscalarField(scalar_field)
-        self._iso_graphic.setListIsovalues([0.0])
-
-    def _create_outline_graphics(self, scene):
-        field_module = self._model.get_field_module()
-        finite_element_field = field_module.findFieldByName('coordinates')
-
-        scene.beginChange()
-        outline = scene.createGraphicsLines()
-        outline.setCoordinateField(finite_element_field)
-        outline.setName('element_outline')
-        scene.endChange()
-
-        return outline
-
-    # TODO: Part of this should be done in the model.
-    def setup_output_region(self):
-        point_cloud_region = self._model.get_point_cloud_region()
-        field_module = point_cloud_region.getFieldmodule()
-        finite_element_field = field_module.createFieldFiniteElement(3)
-        # Set the name of the field, we give it label to help us understand it's purpose
-        finite_element_field.setName('coordinates')
-        # Set the attribute is managed to 1 so the field module will manage the field for us
-        finite_element_field.setManaged(True)
-
-        nodeset = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-
-        scene = point_cloud_region.getScene()
-        self._point_cloud = scene.createGraphicsPoints()
-        self._point_cloud.setFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        self._point_cloud.setCoordinateField(finite_element_field)
-        attributes = self._point_cloud.getGraphicspointattributes()
-        attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
-        attributes.setBaseSize([min(self._dimensions) / 100])
-
-        return nodeset, finite_element_field

@@ -7,40 +7,34 @@ import os
 import re
 
 from opencmiss.zinc.context import Context
-from opencmiss.zinc.field import FieldImage
-from opencmiss.zinc.element import Element, Elementbasis
+from opencmiss.zinc.field import Field, FieldImage
+
+from opencmiss.utils.zinc.finiteelement import create_cube_element
 
 
+# TODO: Also, should the material and glyph methods go in the scene...?
 class AutoSegmentationModel(object):
     def __init__(self, input_image_data):
         self._context = Context('Auto-Segmentation')
+
+        self._root_region = self._context.getDefaultRegion()
+        self._point_cloud_region = self._root_region.createChild('output')
+        self._root_scene = self._root_region.getScene()
+        self._output_scene = self._point_cloud_region.getScene()
+        self._field_module = self._root_region.getFieldmodule()
 
         self._input_image_data = input_image_data
         self._output_filename = None
         self._location = None
 
-        self._image_field = None
-        self._segmented_field = None
-        self._segmented_image_field = None
-        self._smooth_field = None
-        self._scalar_field = None
-        self._material = None
+        self._image_field = self._initialise_image_field()
+        self._dimensions_px = self._image_field.getSizeInPixels(3)[1]
+        self._scalar_field = self._create_finite_elements()
 
-        self._root_region = self._context.getDefaultRegion()
-        self._field_module = self._root_region.getFieldmodule()
-        self._scene = self._root_region.getScene()
+        self._output_coordinates, self._node_set = self._setup_output_region()
 
-        self._point_cloud_region = self._root_region.createChild('output')
-
-        self.define_standard_glyphs()
-        self.define_standard_materials()
-
-        self._dimensions_px = None
-
-        self.create_material_using_image_field()
-        self.create_finite_elements()
-
-        self._segmented_image_field = self._field_module.createFieldImageFromSource(self._segmented_field)
+        self._define_standard_glyphs()
+        self._define_standard_materials()
 
     def get_context(self):
         return self._context
@@ -54,11 +48,11 @@ class AutoSegmentationModel(object):
     def get_field_module(self):
         return self._field_module
 
-    def get_scene(self):
-        return self._scene
+    def get_root_scene(self):
+        return self._root_scene
 
-    def get_material(self):
-        return self._material
+    def get_output_scene(self):
+        return self._output_scene
 
     def get_image_field(self):
         return self._image_field
@@ -69,15 +63,21 @@ class AutoSegmentationModel(object):
     def get_dimensions(self):
         return self._dimensions_px
 
-    def define_standard_glyphs(self):
+    def get_output_coordinates(self):
+        return self._output_coordinates
+
+    def get_node_set(self):
+        return self._node_set
+
+    def _define_standard_glyphs(self):
         glyph_module = self._context.getGlyphmodule()
         glyph_module.defineStandardGlyphs()
 
-    def define_standard_materials(self):
+    def _define_standard_materials(self):
         material_module = self._context.getMaterialmodule()
         material_module.defineStandardMaterials()
 
-    def create_finite_elements(self):
+    def _create_finite_elements(self):
         self._field_module.beginChange()
 
         finite_element_field = self._field_module.createFieldFiniteElement(3)
@@ -85,30 +85,23 @@ class AutoSegmentationModel(object):
         finite_element_field.setManaged(True)
         finite_element_field.setTypeCoordinate(True)
 
-        dim = self._dimensions_px
-        node_coordinate_set = [[0, 0, 0], [dim[0], 0, 0], [0, dim[1], 0], [dim[0], dim[1], 0], [0, 0, dim[2]], [dim[0], 0, dim[2]],
-                               [0, dim[1], dim[2]], [dim[0], dim[1], dim[2]]]
-
-        create_3d_finite_element(self._field_module, finite_element_field, node_coordinate_set)
-
-        self._scalar_field = self._field_module.createFieldComponent(finite_element_field, 3)
+        a, b, c = self._dimensions_px
+        node_coordinate_set = [[0, 0, 0], [a, 0, 0], [0, b, 0], [a, b, 0], [0, 0, c], [a, 0, c], [0, b, c], [a, b, c]]
+        mesh = self._field_module.findMeshByDimension(3)
+        create_cube_element(mesh, finite_element_field, node_coordinate_set)
+        scalar_field = self._field_module.createFieldComponent(finite_element_field, 3)
 
         self._field_module.defineAllFaces()
-
         self._field_module.endChange()
 
-    def create_material_using_image_field(self):
-        material_module = self._context.getMaterialmodule()
-        self._material = material_module.createMaterial()
-        self._material.setName('texture_block')
+        return scalar_field
 
-        self._image_field = self._field_module.createFieldImage()
+    def _initialise_image_field(self):
+        image_field = self._field_module.createFieldImage()
+        image_field.setFilterMode(FieldImage.FILTER_MODE_LINEAR)
+        image_field.setWrapMode(FieldImage.WRAP_MODE_CLAMP)
 
-        self._image_field.setFilterMode(FieldImage.FILTER_MODE_LINEAR)
-        self._image_field.setWrapMode(FieldImage.WRAP_MODE_CLAMP)
-
-        stream_information = self._image_field.createStreaminformationImage()
-
+        stream_information = image_field.createStreaminformationImage()
         directory = self._input_image_data.location()
         files = os.listdir(directory)
         files.sort(key=alphanum_key)
@@ -116,37 +109,26 @@ class AutoSegmentationModel(object):
             if filename not in ['.hg', 'annotation.rdf']:
                 string_name = str(os.path.join(directory, filename))
                 stream_information.createStreamresourceFile(string_name)
+        image_field.read(stream_information)
 
-        self._image_field.read(stream_information)
-        self._material.setTextureField(1, self._image_field)
+        return image_field
 
-        self._dimensions_px = self._image_field.getSizeInPixels(3)[1]
-
-        self._smooth_field = self._field_module.createFieldImagefilterCurvatureAnisotropicDiffusion(self._image_field, 0.0625, 2, 5)
-        self._segmented_field = self._field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1,
-                                                                                            1, [0.5, 0.6111, 0.3889])
-
-    def get_point_cloud(self):
-        point_cloud = []
+    def _setup_output_region(self):
         field_module = self._point_cloud_region.getFieldmodule()
-        field_module.beginChange()
-        field_cache = field_module.createFieldcache()
-        coordinate_field = field_module.findFieldByName('coordinates')
-        nodeset = field_module.findNodesetByName('nodes')
-        template = nodeset.createNodetemplate()
-        template.defineField(coordinate_field)
 
-        node_iterator = nodeset.createNodeiterator()
-        node = node_iterator.next()
-        while node.isValid():
-            field_cache.setNode(node)
-            position = coordinate_field.evaluateReal(field_cache, 3)[1]
-            node = node_iterator.next()
-            point_cloud.append(position)
+        output_coordinates = field_module.createFieldFiniteElement(3)
+        output_coordinates.setName('coordinates')
+        output_coordinates.setManaged(True)
 
-        field_module.endChange()
+        node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
 
-        return point_cloud
+        return output_coordinates, node_set
+
+    def generate_points(self):
+        self._node_set.destroyAllNodes()
+        graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
+        surface_density = 10000 / min(self._dimensions_px) ** 2
+        self._root_scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, surface_density, 1.0)
 
     def set_location(self, location):
         self._location = location
@@ -177,48 +159,3 @@ def alphanum_key(s):
     "z23a" -> ["z", 23, "a"]
     """
     return [try_int(c) for c in re.split('([0-9]+)', s)]
-
-
-def create_3d_finite_element(fieldmodule, finite_element_field, node_coordinate_set):
-    """
-    Create a single finite element using the supplied
-    finite element field and node coordinate set.
-    """
-    # Find a special node set named 'nodes'
-    nodeset = fieldmodule.findNodesetByName('nodes')
-    node_template = nodeset.createNodetemplate()
-
-    # Set the finite element coordinate field for the nodes to use
-    node_template.defineField(finite_element_field)
-    field_cache = fieldmodule.createFieldcache()
-
-    node_identifiers = []
-    # Create eight nodes to define a cube finite element
-    for node_coordinate in node_coordinate_set:
-        node = nodeset.createNode(-1, node_template)
-        node_identifiers.append(node.getIdentifier())
-        # Set the node coordinates, first set the field cache to use the current node
-        field_cache.setNode(node)
-        # Pass in floats as an array
-        finite_element_field.assignReal(field_cache, node_coordinate)
-
-    # Use a 3D mesh to to create the 3D finite element.
-    mesh = fieldmodule.findMeshByDimension(3)
-    element_template = mesh.createElementtemplate()
-    element_template.setElementShapeType(Element.SHAPE_TYPE_CUBE)
-    element_node_count = 8
-    element_template.setNumberOfNodes(element_node_count)
-    # Specify the dimension and the interpolation function for the element basis function
-    linear_basis = fieldmodule.createElementbasis(3, Elementbasis.FUNCTION_TYPE_LINEAR_LAGRANGE)
-    # the indecies of the nodes in the node template we want to use.
-    node_indexes = [1, 2, 3, 4, 5, 6, 7, 8]
-
-    # Define a nodally interpolated element field or field component in the
-    # element_template
-    element_template.defineFieldSimpleNodal(finite_element_field, -1, linear_basis, node_indexes)
-
-    for i, node_identifier in enumerate(node_identifiers):
-        node = nodeset.findNodeByIdentifier(node_identifier)
-        element_template.setNode(i + 1, node)
-
-    mesh.defineElement(-1, element_template)
