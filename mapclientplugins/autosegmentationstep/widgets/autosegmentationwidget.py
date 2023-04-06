@@ -25,6 +25,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui = Ui_AutoSegmentationWidget()
         self._ui.setupUi(self)
 
+        self._callback = None
+
         self._model = AutoSegmentationModel(image_data_location)
         self._scene = AutoSegmentationScene(self._model)
         self._view = self._ui.zincWidget
@@ -41,9 +43,20 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationCheckBox.stateChanged.connect(self._scene.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._scene.set_point_cloud_visibility)
         self._ui.generatePointsButton.clicked.connect(self._scene.generate_points)
+        self._ui.doneButton.clicked.connect(self._done_execution)
 
-    def register_done_execution(self, callback):
-        self._ui.doneButton.clicked.connect(callback)
+    def register_done_execution(self, done_execution):
+        self._callback = done_execution
+
+    def _done_execution(self):
+        self._model.write_point_cloud()
+        self._callback()
+
+    def set_location(self, location):
+        self._model.set_location(location)
+
+    def get_output_filename(self):
+        return self._model.get_output_filename()
 
     def get_point_cloud(self):
         return self._model.get_point_cloud()

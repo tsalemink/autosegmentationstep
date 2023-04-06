@@ -16,6 +16,8 @@ class AutoSegmentationModel(object):
         self._context = Context('Auto-Segmentation')
 
         self._input_image_data = input_image_data
+        self._output_filename = None
+        self._location = None
 
         self._image_field = None
         self._segmented_field = None
@@ -145,6 +147,21 @@ class AutoSegmentationModel(object):
         field_module.endChange()
 
         return point_cloud
+
+    def set_location(self, location):
+        self._location = location
+
+    def write_point_cloud(self):
+        temp_location = os.path.join(os.path.split(self._location)[0], "_temp")
+        if not os.path.exists(temp_location):
+            os.makedirs(temp_location)
+
+        filename = 'point-cloud.exf'
+        self._output_filename = os.path.join(temp_location, filename)
+        self._point_cloud_region.writeFile(self._output_filename)
+
+    def get_output_filename(self):
+        return self._output_filename
 
 
 def try_int(s):

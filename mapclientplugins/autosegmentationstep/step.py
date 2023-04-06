@@ -17,6 +17,7 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
     You should have received a copy of the GNU General Public License
     along with MAP Client.  If not, see <http://www.gnu.org/licenses/>..
 """
+import os
 import random
 import string as s
 
@@ -37,7 +38,7 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#images'))
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
-                      'http://physiomeproject.org/workflow/1.0/rdf-schema#pointcloud'))
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
         self._state = StepState()
         self._identifier = generate_identifier()
 
@@ -63,14 +64,15 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         if not self._widget:
             self._widget = AutoSegmentationWidget(self._input_image_data)
             self._widget.register_done_execution(self._doneExecution)
+            self._widget.set_location(os.path.join(self._location, self._identifier))
         self._setCurrentWidget(self._widget)
 
     def setPortData(self, port_id, data_in):
         self._input_image_data = data_in
 
     def getPortData(self, index):
-        point_cloud = self._widget.get_point_cloud()
-        return point_cloud
+        output_filename = self._widget.get_output_filename()
+        return output_filename
 
 
 class StepState(object):
