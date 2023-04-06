@@ -33,8 +33,10 @@ class AutoSegmentationModel(object):
         self.define_standard_glyphs()
         self.define_standard_materials()
 
-        self.create_finite_elements()
+        self._dimensions_px = None
+
         self.create_material_using_image_field()
+        self.create_finite_elements()
 
         self._segmented_image_field = self._field_module.createFieldImageFromSource(self._segmented_field)
 
@@ -62,6 +64,9 @@ class AutoSegmentationModel(object):
     def get_scalar_field(self):
         return self._scalar_field
 
+    def get_dimensions(self):
+        return self._dimensions_px
+
     def define_standard_glyphs(self):
         glyph_module = self._context.getGlyphmodule()
         glyph_module.defineStandardGlyphs()
@@ -78,8 +83,10 @@ class AutoSegmentationModel(object):
         finite_element_field.setManaged(True)
         finite_element_field.setTypeCoordinate(True)
 
-        a, b, c = 1, 1, 1
-        node_coordinate_set = [[0, 0, 0], [a, 0, 0], [0, b, 0], [a, b, 0], [0, 0, c], [a, 0, c], [0, b, c], [a, b, c]]
+        dim = self._dimensions_px
+        node_coordinate_set = [[0, 0, 0], [dim[0], 0, 0], [0, dim[1], 0], [dim[0], dim[1], 0], [0, 0, dim[2]], [dim[0], 0, dim[2]],
+                               [0, dim[1], dim[2]], [dim[0], dim[1], dim[2]]]
+
         create_3d_finite_element(self._field_module, finite_element_field, node_coordinate_set)
 
         self._scalar_field = self._field_module.createFieldComponent(finite_element_field, 3)
@@ -110,6 +117,8 @@ class AutoSegmentationModel(object):
 
         self._image_field.read(stream_information)
         self._material.setTextureField(1, self._image_field)
+
+        self._dimensions_px = self._image_field.getSizeInPixels(3)[1]
 
         self._smooth_field = self._field_module.createFieldImagefilterCurvatureAnisotropicDiffusion(self._image_field, 0.0625, 2, 5)
         self._segmented_field = self._field_module.createFieldImagefilterConnectedThreshold(self._smooth_field, 0.2, 1.0, 1,

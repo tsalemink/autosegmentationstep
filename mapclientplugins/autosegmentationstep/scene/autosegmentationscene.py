@@ -30,9 +30,16 @@ class AutoSegmentationScene(object):
         # Visualise the outline.
         self._create_outline_graphics(scene)
 
+        # Get dimensions.
+        self._dimensions = self._model.get_dimensions()
+
+        # Scale the segmentation fields.
+        scale_field = self._model.get_field_module().createFieldConstant(self._model.get_dimensions())
+        self._scaled_xi_field = xi_field * scale_field
+
         image_field = self._model.get_image_field()
         self._segmentation_contour = scene.createGraphicsContours()
-        self._segmentation_contour.setCoordinateField(xi_field)
+        self._segmentation_contour.setCoordinateField(self._scaled_xi_field)
         self._segmentation_contour.setTessellation(tessellation)
         self._segmentation_contour.setIsoscalarField(image_field)
         self._segmentation_contour.setListIsovalues([0.0])
@@ -54,7 +61,7 @@ class AutoSegmentationScene(object):
         self._point_cloud.setVisibilityFlag(state != 0)
 
     def set_slider_value(self, value):
-        self._iso_graphic.setListIsovalues([value / 100.0])
+        self._iso_graphic.setListIsovalues([value * self._dimensions[2] / 100])
 
     def set_segmentation_value(self, value):
         self._segmentation_contour.setListIsovalues([value / 10000.0])
@@ -64,7 +71,8 @@ class AutoSegmentationScene(object):
         self.set_image_plane_visibility(0)
         scene = self._context.getDefaultRegion().getScene()
         graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
-        scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, 10000.0, 1.0)
+        # TODO: The surface-density should depend on the size of the image data.
+        scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, 0.1, 1.0)
         self.set_image_plane_visibility(1)
 
     def create_surface_graphics(self, region):
@@ -113,6 +121,7 @@ class AutoSegmentationScene(object):
         self._point_cloud.setCoordinateField(finite_element_field)
         attributes = self._point_cloud.getGraphicspointattributes()
         attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
-        attributes.setBaseSize([0.01])
+        # TODO: This should depend on the size of the image data.
+        attributes.setBaseSize([2.0])
 
         return nodeset, finite_element_field
