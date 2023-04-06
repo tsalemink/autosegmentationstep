@@ -71,8 +71,8 @@ class AutoSegmentationScene(object):
         self.set_image_plane_visibility(0)
         scene = self._context.getDefaultRegion().getScene()
         graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
-        # TODO: The surface-density should depend on the size of the image data.
-        scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, 0.1, 1.0)
+        surface_density = 10000 / min(self._dimensions) ** 2
+        scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, surface_density, 1.0)
         self.set_image_plane_visibility(1)
 
     def create_surface_graphics(self, region):
@@ -121,7 +121,6 @@ class AutoSegmentationScene(object):
         self._point_cloud.setCoordinateField(finite_element_field)
         attributes = self._point_cloud.getGraphicspointattributes()
         attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
-        # TODO: This should depend on the size of the image data.
-        attributes.setBaseSize([2.0])
+        attributes.setBaseSize([min(self._dimensions) / 100])
 
         return nodeset, finite_element_field
