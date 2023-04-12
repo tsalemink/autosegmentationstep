@@ -16,9 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
-    QHBoxLayout, QLabel, QLayout, QPushButton,
-    QSizePolicy, QSlider, QSpacerItem, QVBoxLayout,
-    QWidget)
+    QHBoxLayout, QLabel, QLayout, QLineEdit,
+    QPushButton, QSizePolicy, QSlider, QSpacerItem,
+    QVBoxLayout, QWidget)
 
 from mapclientplugins.autosegmentationstep.widgets.zincautosegmentationwidget import ZincAutoSegmentationWidget
 
@@ -46,7 +46,7 @@ class Ui_AutoSegmentationWidget(object):
         sizePolicy1.setHeightForWidth(self.zincWidget.sizePolicy().hasHeightForWidth())
         self.zincWidget.setSizePolicy(sizePolicy1)
 
-        self.gridLayout.addWidget(self.zincWidget, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.zincWidget, 0, 2, 1, 1)
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
@@ -122,6 +122,21 @@ class Ui_AutoSegmentationWidget(object):
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_2)
 
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.label_3 = QLabel(self.groupBox)
+        self.label_3.setObjectName(u"label_3")
+
+        self.horizontalLayout_3.addWidget(self.label_3)
+
+        self.lineEditTessellationDivisions = QLineEdit(self.groupBox)
+        self.lineEditTessellationDivisions.setObjectName(u"lineEditTessellationDivisions")
+
+        self.horizontalLayout_3.addWidget(self.lineEditTessellationDivisions)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.imagePlaneCheckBox = QCheckBox(self.groupBox)
@@ -147,6 +162,10 @@ class Ui_AutoSegmentationWidget(object):
 
 
         self.gridLayout.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
+
+        self.horizontalSpacer_4 = QSpacerItem(10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.gridLayout.addItem(self.horizontalSpacer_4, 0, 1, 1, 1)
 
 
         self.verticalLayout.addWidget(self.groupBox)
@@ -181,6 +200,8 @@ class Ui_AutoSegmentationWidget(object):
         self.groupBox.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Auto Segmentation Viewer", None))
         self.label.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane Level", None))
         self.label_2.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation Contour Threshold", None))
+        self.label_3.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation Tessellation Divisions:", None))
+        self.lineEditTessellationDivisions.setText("")
         self.imagePlaneCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane", None))
         self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
         self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))

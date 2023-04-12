@@ -3,7 +3,7 @@ Created: April, 2023
 
 @author: tsalemink
 """
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore, QtGui
 
 from opencmiss.zincwidgets.handlers.scenemanipulation import SceneManipulation
 
@@ -34,11 +34,14 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._view.set_context(self._model.get_context())
         self._view.register_handler(SceneManipulation())
 
+        self._setup_tessellation_line_edit()
+
         self._make_connections()
 
     def _make_connections(self):
         self._ui.isoValueSlider.valueChanged.connect(self._scene.set_slider_value)
         self._ui.segmentationValueSlider.valueChanged.connect(self._scene.set_segmentation_value)
+        self._ui.lineEditTessellationDivisions.editingFinished.connect(self._update_tessellation)
         self._ui.imagePlaneCheckBox.stateChanged.connect(self._scene.set_image_plane_visibility)
         self._ui.segmentationCheckBox.stateChanged.connect(self._scene.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._scene.set_point_cloud_visibility)
@@ -57,3 +60,17 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def get_output_filename(self):
         return self._model.get_output_filename()
+
+    def _setup_tessellation_line_edit(self):
+        divisions = self._scene.get_tessellation_divisions()
+        divisions = ",".join([str(i) for i in divisions])
+        self._ui.lineEditTessellationDivisions.setText(divisions)
+
+        regex = QtCore.QRegularExpression("^[0-9]{1,3}((, ?[0-9]{1,3}){2})?$")
+        validator = QtGui.QRegularExpressionValidator(regex)
+        self._ui.lineEditTessellationDivisions.setValidator(validator)
+
+    def _update_tessellation(self):
+        text = self._ui.lineEditTessellationDivisions.text()
+        divisions_list = [int(x.strip()) for x in text.split(',')]
+        self._scene.set_tessellation_divisions(divisions_list)

@@ -67,7 +67,7 @@ class AutoSegmentationScene(object):
 
         tessellation_module = self._context.getTessellationmodule()
         tessellation = tessellation_module.createTessellation()
-        tessellation.setMinimumDivisions([64])
+        tessellation.setMinimumDivisions([256, 125, 128])
 
         self._root_scene.beginChange()
         segmentation_contour = self._root_scene.createGraphicsContours()
@@ -110,3 +110,9 @@ class AutoSegmentationScene(object):
         self.set_image_plane_visibility(0)
         self._model.generate_points()
         self.set_image_plane_visibility(1)
+
+    def get_tessellation_divisions(self):
+        return self._segmentation_contour.getTessellation().getMinimumDivisions(3)[1]
+
+    def set_tessellation_divisions(self, divisions):
+        self._segmentation_contour.getTessellation().setMinimumDivisions(divisions)
