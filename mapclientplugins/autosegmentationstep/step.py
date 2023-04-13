@@ -18,8 +18,6 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
     along with MAP Client.  If not, see <http://www.gnu.org/licenses/>..
 """
 import os
-import random
-import string as s
 
 from PySide6 import QtGui
 
@@ -39,8 +37,9 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
-        self._state = StepState()
-        self._identifier = generate_identifier()
+        self._config = {
+            'identifier': ''
+        }
 
         self._widget = None
         self._input_image_data = None
@@ -49,10 +48,10 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         return self._configured
 
     def getIdentifier(self):
-        return self._identifier
+        return self._config['identifier']
 
     def setIdentifier(self, identifier):
-        self._identifier = identifier
+        self._config['identifier'] = identifier
 
     def serialize(self):
         pass
@@ -64,7 +63,7 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         if not self._widget:
             self._widget = AutoSegmentationWidget(self._input_image_data)
             self._widget.register_done_execution(self._doneExecution)
-            self._widget.set_location(os.path.join(self._location, self._identifier))
+            self._widget.set_location(os.path.join(self._location, self._config['identifier']))
         self._setCurrentWidget(self._widget)
 
     def setPortData(self, port_id, data_in):
@@ -73,15 +72,3 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
     def getPortData(self, index):
         output_filename = self._widget.get_output_filename()
         return output_filename
-
-
-class StepState(object):
-    """
-    This class holds the step state, for use with serialization/deserialization.
-    """
-    def __init__(self):
-        pass
-
-
-def generate_identifier(char_set=s.ascii_uppercase + s.digits):
-    return ''.join(random.sample(char_set * 6, 6))
