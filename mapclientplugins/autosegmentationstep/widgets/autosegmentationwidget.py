@@ -5,7 +5,7 @@ Created: April, 2023
 """
 from PySide6 import QtWidgets, QtCore, QtGui
 
-from opencmiss.zincwidgets.handlers.scenemanipulation import SceneManipulation
+from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
 from mapclientplugins.autosegmentationstep.scene.autosegmentationscene import AutoSegmentationScene
@@ -13,14 +13,8 @@ from mapclientplugins.autosegmentationstep.widgets.ui_autosegmentationwidget imp
 
 
 class AutoSegmentationWidget(QtWidgets.QWidget):
-    """
-    About dialog to display program about information.
-    """
 
     def __init__(self, image_data_location, parent=None):
-        """
-        Constructor
-        """
         QtWidgets.QWidget.__init__(self, parent)
         self._ui = Ui_AutoSegmentationWidget()
         self._ui.setupUi(self)

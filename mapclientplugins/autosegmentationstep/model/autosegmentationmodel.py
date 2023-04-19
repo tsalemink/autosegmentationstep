@@ -6,10 +6,10 @@ Created: April, 2023
 import os
 import re
 
-from opencmiss.zinc.context import Context
-from opencmiss.zinc.field import Field, FieldImage
+from cmlibs.zinc.context import Context
+from cmlibs.zinc.field import Field, FieldImage
 
-from opencmiss.utils.zinc.finiteelement import create_cube_element
+from cmlibs.utils.zinc.finiteelement import create_cube_element
 
 
 # TODO: Also, should the material and glyph methods go in the scene...?
