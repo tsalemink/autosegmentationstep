@@ -62,8 +62,10 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
     def execute(self):
         if not self._widget:
             self._widget = AutoSegmentationWidget(self._input_image_data)
-            self._widget.register_done_execution(self._doneExecution)
             self._widget.set_location(os.path.join(self._location, self._config['identifier']))
+            self._widget.register_done_execution(self._doneExecution)
+
+        self._widget.load_settings()
         self._setCurrentWidget(self._widget)
 
     def setPortData(self, port_id, data_in):

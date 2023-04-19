@@ -99,7 +99,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="isoValueLineEdit"/>
+             <widget class="QLineEdit" name="isoValueLineEdit">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -160,7 +164,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="segmentationValueLineEdit"/>
+             <widget class="QLineEdit" name="segmentationValueLineEdit">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>

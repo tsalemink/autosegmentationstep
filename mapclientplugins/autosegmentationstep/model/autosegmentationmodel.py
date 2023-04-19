@@ -25,7 +25,6 @@ class AutoSegmentationModel(object):
 
         self._input_image_data = input_image_data
         self._output_filename = None
-        self._location = None
 
         self._image_field = self._initialise_image_field()
         self._dimensions_px = self._image_field.getSizeInPixels(3)[1]
@@ -34,7 +33,9 @@ class AutoSegmentationModel(object):
         self._output_coordinates, self._node_set = self._setup_output_region()
 
         self._define_standard_glyphs()
-        self._define_standard_materials()
+        self._point_cloud_material = None
+        self._contour_material = None
+        self._define_materials()
 
     def get_context(self):
         return self._context
@@ -69,13 +70,21 @@ class AutoSegmentationModel(object):
     def get_node_set(self):
         return self._node_set
 
+    def get_point_cloud_material(self):
+        return self._point_cloud_material
+
+    def get_contour_material(self):
+        return self._contour_material
+
     def _define_standard_glyphs(self):
         glyph_module = self._context.getGlyphmodule()
         glyph_module.defineStandardGlyphs()
 
-    def _define_standard_materials(self):
+    def _define_materials(self):
         material_module = self._context.getMaterialmodule()
         material_module.defineStandardMaterials()
+        self._point_cloud_material = material_module.findMaterialByName("yellow")
+        self._contour_material = material_module.findMaterialByName("white")
 
     def _create_finite_elements(self):
         self._field_module.beginChange()
@@ -129,18 +138,6 @@ class AutoSegmentationModel(object):
         graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
         surface_density = 10000 / min(self._dimensions_px) ** 2
         self._root_scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, surface_density, 1.0)
-
-    def set_location(self, location):
-        self._location = location
-
-    def write_point_cloud(self):
-        temp_location = os.path.join(os.path.split(self._location)[0], "_temp")
-        if not os.path.exists(temp_location):
-            os.makedirs(temp_location)
-
-        filename = 'point-cloud.exf'
-        self._output_filename = os.path.join(temp_location, filename)
-        self._point_cloud_region.writeFile(self._output_filename)
 
     def get_output_filename(self):
         return self._output_filename

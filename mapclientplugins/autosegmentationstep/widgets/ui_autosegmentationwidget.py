@@ -74,6 +74,7 @@ class Ui_AutoSegmentationWidget(object):
 
         self.isoValueLineEdit = QLineEdit(self.groupBox)
         self.isoValueLineEdit.setObjectName(u"isoValueLineEdit")
+        self.isoValueLineEdit.setReadOnly(True)
 
         self.verticalLayout_5.addWidget(self.isoValueLineEdit)
 
@@ -109,6 +110,7 @@ class Ui_AutoSegmentationWidget(object):
 
         self.segmentationValueLineEdit = QLineEdit(self.groupBox)
         self.segmentationValueLineEdit.setObjectName(u"segmentationValueLineEdit")
+        self.segmentationValueLineEdit.setReadOnly(True)
 
         self.verticalLayout_4.addWidget(self.segmentationValueLineEdit)
 
