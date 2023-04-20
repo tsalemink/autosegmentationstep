@@ -74,7 +74,6 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             with open(self._settings_file()) as f:
                 settings = json.load(f)
 
-            print(settings)
             if "iso-value" in settings:
                 self._ui.isoValueSlider.setValue(int(settings["iso-value"]))
             if "contour-value" in settings:
