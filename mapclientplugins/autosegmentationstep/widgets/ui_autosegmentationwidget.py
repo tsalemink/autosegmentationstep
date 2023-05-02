@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'autosegmentationwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.1
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
-    QHBoxLayout, QLabel, QLayout, QLineEdit,
-    QPushButton, QSizePolicy, QSlider, QSpacerItem,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLayout,
+    QLineEdit, QPushButton, QSizePolicy, QSlider,
+    QSpacerItem, QVBoxLayout, QWidget)
 
 from mapclientplugins.autosegmentationstep.widgets.zincautosegmentationwidget import ZincAutoSegmentationWidget
 
@@ -26,7 +26,7 @@ class Ui_AutoSegmentationWidget(object):
     def setupUi(self, AutoSegmentationWidget):
         if not AutoSegmentationWidget.objectName():
             AutoSegmentationWidget.setObjectName(u"AutoSegmentationWidget")
-        AutoSegmentationWidget.resize(448, 352)
+        AutoSegmentationWidget.resize(820, 646)
         self.verticalLayout = QVBoxLayout(AutoSegmentationWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.groupBox = QGroupBox(AutoSegmentationWidget)
@@ -36,18 +36,8 @@ class Ui_AutoSegmentationWidget(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
         self.groupBox.setSizePolicy(sizePolicy)
-        self.gridLayout = QGridLayout(self.groupBox)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.zincWidget = ZincAutoSegmentationWidget(self.groupBox)
-        self.zincWidget.setObjectName(u"zincWidget")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sizePolicy1.setHorizontalStretch(1)
-        sizePolicy1.setVerticalStretch(1)
-        sizePolicy1.setHeightForWidth(self.zincWidget.sizePolicy().hasHeightForWidth())
-        self.zincWidget.setSizePolicy(sizePolicy1)
-
-        self.gridLayout.addWidget(self.zincWidget, 0, 2, 1, 1)
-
+        self.horizontalLayout_3 = QHBoxLayout(self.groupBox)
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.horizontalLayout_2 = QHBoxLayout()
@@ -63,11 +53,11 @@ class Ui_AutoSegmentationWidget(object):
         self.verticalLayout_5.setContentsMargins(10, -1, 10, -1)
         self.label = QLabel(self.groupBox)
         self.label.setObjectName(u"label")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy2)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy1)
         self.label.setMinimumSize(QSize(80, 26))
         self.label.setMaximumSize(QSize(80, 26))
         self.label.setAlignment(Qt.AlignCenter)
@@ -82,6 +72,12 @@ class Ui_AutoSegmentationWidget(object):
 
         self.verticalLayout_5.addWidget(self.isoValueSlider, 0, Qt.AlignHCenter)
 
+        self.isoValueLineEdit = QLineEdit(self.groupBox)
+        self.isoValueLineEdit.setObjectName(u"isoValueLineEdit")
+        self.isoValueLineEdit.setReadOnly(True)
+
+        self.verticalLayout_5.addWidget(self.isoValueLineEdit)
+
 
         self.horizontalLayout_2.addLayout(self.verticalLayout_5)
 
@@ -93,11 +89,11 @@ class Ui_AutoSegmentationWidget(object):
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.label_2 = QLabel(self.groupBox)
         self.label_2.setObjectName(u"label_2")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
-        self.label_2.setSizePolicy(sizePolicy3)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
+        self.label_2.setSizePolicy(sizePolicy2)
         self.label_2.setMinimumSize(QSize(100, 26))
         self.label_2.setMaximumSize(QSize(100, 26))
         self.label_2.setAlignment(Qt.AlignCenter)
@@ -112,6 +108,12 @@ class Ui_AutoSegmentationWidget(object):
 
         self.verticalLayout_4.addWidget(self.segmentationValueSlider, 0, Qt.AlignHCenter)
 
+        self.segmentationValueLineEdit = QLineEdit(self.groupBox)
+        self.segmentationValueLineEdit.setObjectName(u"segmentationValueLineEdit")
+        self.segmentationValueLineEdit.setReadOnly(True)
+
+        self.verticalLayout_4.addWidget(self.segmentationValueLineEdit)
+
 
         self.horizontalLayout_2.addLayout(self.verticalLayout_4)
 
@@ -122,20 +124,34 @@ class Ui_AutoSegmentationWidget(object):
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_2)
 
-        self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.gridLayout = QGridLayout()
+        self.gridLayout.setObjectName(u"gridLayout")
         self.label_3 = QLabel(self.groupBox)
         self.label_3.setObjectName(u"label_3")
 
-        self.horizontalLayout_3.addWidget(self.label_3)
+        self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
 
-        self.lineEditTessellationDivisions = QLineEdit(self.groupBox)
-        self.lineEditTessellationDivisions.setObjectName(u"lineEditTessellationDivisions")
+        self.label_4 = QLabel(self.groupBox)
+        self.label_4.setObjectName(u"label_4")
 
-        self.horizontalLayout_3.addWidget(self.lineEditTessellationDivisions)
+        self.gridLayout.addWidget(self.label_4, 1, 0, 1, 2)
+
+        self.tessellationDivisionsLineEdit = QLineEdit(self.groupBox)
+        self.tessellationDivisionsLineEdit.setObjectName(u"tessellationDivisionsLineEdit")
+
+        self.gridLayout.addWidget(self.tessellationDivisionsLineEdit, 1, 2, 1, 1)
+
+        self.segmentationAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBox)
+        self.segmentationAlphaDoubleSpinBox.setObjectName(u"segmentationAlphaDoubleSpinBox")
+        self.segmentationAlphaDoubleSpinBox.setDecimals(3)
+        self.segmentationAlphaDoubleSpinBox.setMaximum(1.000000000000000)
+        self.segmentationAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
+        self.segmentationAlphaDoubleSpinBox.setValue(1.000000000000000)
+
+        self.gridLayout.addWidget(self.segmentationAlphaDoubleSpinBox, 0, 2, 1, 1)
 
 
-        self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+        self.verticalLayout_3.addLayout(self.gridLayout)
 
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -161,11 +177,21 @@ class Ui_AutoSegmentationWidget(object):
         self.verticalLayout_3.addLayout(self.verticalLayout_2)
 
 
-        self.gridLayout.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
+        self.horizontalLayout_3.addLayout(self.verticalLayout_3)
 
         self.horizontalSpacer_4 = QSpacerItem(10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.gridLayout.addItem(self.horizontalSpacer_4, 0, 1, 1, 1)
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_4)
+
+        self.zincWidget = ZincAutoSegmentationWidget(self.groupBox)
+        self.zincWidget.setObjectName(u"zincWidget")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy3.setHorizontalStretch(1)
+        sizePolicy3.setVerticalStretch(1)
+        sizePolicy3.setHeightForWidth(self.zincWidget.sizePolicy().hasHeightForWidth())
+        self.zincWidget.setSizePolicy(sizePolicy3)
+
+        self.horizontalLayout_3.addWidget(self.zincWidget)
 
 
         self.verticalLayout.addWidget(self.groupBox)
@@ -200,8 +226,9 @@ class Ui_AutoSegmentationWidget(object):
         self.groupBox.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Auto Segmentation Viewer", None))
         self.label.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane Level", None))
         self.label_2.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation Contour Threshold", None))
-        self.label_3.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation Tessellation Divisions:", None))
-        self.lineEditTessellationDivisions.setText("")
+        self.label_3.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation Contour Alpha:", None))
+        self.label_4.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation Tessellation Divisions:", None))
+        self.tessellationDivisionsLineEdit.setText("")
         self.imagePlaneCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane", None))
         self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
         self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))

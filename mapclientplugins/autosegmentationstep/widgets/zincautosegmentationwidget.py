@@ -3,7 +3,7 @@ Created: April, 2023
 
 @author: tsalemink
 """
-from opencmiss.zincwidgets.basesceneviewerwidget import BaseSceneviewerWidget
+from cmlibs.widgets.basesceneviewerwidget import BaseSceneviewerWidget
 
 
 class ZincAutoSegmentationWidget(BaseSceneviewerWidget):

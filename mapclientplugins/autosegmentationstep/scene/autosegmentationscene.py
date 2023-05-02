@@ -3,8 +3,9 @@ Created: April, 2023
 
 @author: tsalemink
 """
-from opencmiss.zinc.field import Field
-from opencmiss.zinc.glyph import Glyph
+from cmlibs.zinc.field import Field
+from cmlibs.zinc.glyph import Glyph
+from cmlibs.zinc.material import Material
 
 
 class AutoSegmentationScene(object):
@@ -21,7 +22,10 @@ class AutoSegmentationScene(object):
         self._create_outline_graphics()
         self._iso_graphic = self._create_surface_graphics()
         self._segmentation_contour = self._create_segmentation_graphics()
+        self._segmentation_contour_material = model.get_contour_material()
+        self._segmentation_contour.setMaterial(self._segmentation_contour_material)
         self._point_cloud = self._create_point_cloud_graphics()
+        self._point_cloud.setMaterial(model.get_point_cloud_material())
 
     def _create_outline_graphics(self):
         field_module = self._model.get_field_module()
@@ -90,6 +94,9 @@ class AutoSegmentationScene(object):
         self._output_scene.endChange()
 
         return point_cloud
+
+    def set_contour_alpha(self, value):
+        self._segmentation_contour_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
 
     def set_image_plane_visibility(self, state):
         self._iso_graphic.setVisibilityFlag(state != 0)
