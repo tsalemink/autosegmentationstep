@@ -19,7 +19,7 @@ class AutoSegmentationScene(object):
         self._node_set = model.get_node_set()
 
         # Initialize the graphics.
-        self._create_outline_graphics()
+        self._outline_graphics = self._create_outline_graphics()
         self._iso_graphic = self._create_surface_graphics()
         self._segmentation_contour = self._create_segmentation_graphics()
         self._segmentation_contour_material = model.get_contour_material()
@@ -97,6 +97,9 @@ class AutoSegmentationScene(object):
 
     def set_contour_alpha(self, value):
         self._segmentation_contour_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
+
+    def set_outline_visibility(self, state):
+        self._outline_graphics.setVisibilityFlag(state != 0)
 
     def set_image_plane_visibility(self, state):
         self._iso_graphic.setVisibilityFlag(state != 0)

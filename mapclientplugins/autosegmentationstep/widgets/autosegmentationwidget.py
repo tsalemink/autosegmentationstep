@@ -3,11 +3,14 @@ Created: April, 2023
 
 @author: tsalemink
 """
-import json
 import os
+import json
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
+from cmlibs.zinc.field import Field
+from cmlibs.exporter.webgl import ArgonSceneExporter
+from cmlibs.importer.webgl import import_data_into_region
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
@@ -62,10 +65,44 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        self._model.get_point_cloud_region().writeFile(self._output_file())
+        self._model.get_output_region().writeFile(self._output_file())
+
+    def _write_segmentation_surface(self):
+        # Export the scene into a WebGL JSON file.
+        self._hide_graphics()
+        scene = self._model.get_root_scene()
+        scene_filter = self._model.get_context().getScenefiltermodule().getDefaultScenefilter()
+        output_directory = os.path.dirname(os.path.realpath(__file__))
+        scene_exporter = ArgonSceneExporter(output_directory)
+        scene_exporter.export_webgl_from_scene(scene, scene_filter)
+        self._show_graphics()
+
+        # Import the WebGL JSON file into Zinc.
+        region = self._model.get_output_region()
+        mesh_region = region.findChildByName('mesh')
+        if mesh_region.isValid():
+            region.removeChild(mesh_region)
+        mesh_region = region.createChild('mesh')
+        inputs = os.path.join(output_directory, "ArgonSceneExporterWebGL_1.json")
+        import_data_into_region(mesh_region, inputs)
+
+        # Delete the WebGL JSON files.
+        os.remove(inputs)
+        os.remove(os.path.join(output_directory, "ArgonSceneExporterWebGL_metadata.json"))
+
+    def _hide_graphics(self):
+        self._scene.set_outline_visibility(0)
+        self._scene.set_image_plane_visibility(0)
+        self._scene.set_point_cloud_visibility(0)
+
+    def _show_graphics(self):
+        self._scene.set_outline_visibility(1)
+        self._scene.set_image_plane_visibility(1)
+        self._scene.set_point_cloud_visibility(1)
 
     def _done_execution(self):
         self._save_settings()
+        self._write_segmentation_surface()
         self._write_point_cloud()
         self._callback()
 
@@ -90,7 +127,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
                 self._ui.segmentationAlphaDoubleSpinBox.setValue(settings["alpha"])
 
         if os.path.isfile(self._output_file()):
-            self._model.get_point_cloud_region().readFile(self._output_file())
+            self._model.get_output_region().readFile(self._output_file())
 
     def _save_settings(self):
         if not os.path.exists(self._location):
