@@ -116,11 +116,6 @@ class AutoSegmentationScene(object):
     def set_segmentation_value(self, value):
         self._segmentation_contour.setListIsovalues([value / 10000.0])
 
-    def generate_points(self):
-        self.set_image_plane_visibility(0)
-        self._model.generate_points()
-        self.set_image_plane_visibility(1)
-
     def get_tessellation_divisions(self):
         return self._segmentation_contour.getTessellation().getMinimumDivisions(3)[1]
 

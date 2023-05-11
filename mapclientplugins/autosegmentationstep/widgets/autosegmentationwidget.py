@@ -49,7 +49,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationCheckBox.stateChanged.connect(self._scene.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._scene.set_point_cloud_visibility)
         self._ui.segmentationAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_contour_alpha)
-        self._ui.generatePointsButton.clicked.connect(self._scene.generate_points)
+        self._ui.generatePointsButton.clicked.connect(self.generate_points)
         self._ui.doneButton.clicked.connect(self._done_execution)
 
     def register_done_execution(self, done_execution):
@@ -172,3 +172,10 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         text = self._ui.tessellationDivisionsLineEdit.text()
         divisions_list = [int(x.strip()) for x in text.split(',')]
         self._scene.set_tessellation_divisions(divisions_list)
+
+    def generate_points(self):
+        self._scene.set_image_plane_visibility(0)
+        self._scene.set_segmentation_visibility(1)
+        self._model.generate_points()
+        self._scene.set_image_plane_visibility(self._ui.imagePlaneCheckBox.isChecked())
+        self._scene.set_segmentation_visibility(self._ui.segmentationCheckBox.isChecked())
