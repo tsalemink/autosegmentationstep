@@ -67,15 +67,10 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
         self._model.get_output_region().writeFile(self._output_file())
 
-    def _write_segmentation_surface(self):
-        # Export the scene into a WebGL JSON file.
-        self._hide_graphics()
-        scene = self._model.get_root_scene()
-        scene_filter = self._model.get_context().getScenefiltermodule().getDefaultScenefilter()
-        output_directory = os.path.dirname(os.path.realpath(__file__))
-        scene_exporter = ArgonSceneExporter(output_directory)
-        scene_exporter.export_webgl_from_scene(scene, scene_filter)
-        self._show_graphics()
+    def _import_segmentation_mesh(self):
+        inputs = os.path.join(self._location, "ArgonSceneExporterWebGL_1.json")
+        if not os.path.exists(inputs):
+            return
 
         # Import the WebGL JSON file into Zinc.
         output_region = self._model.get_output_region()
@@ -88,12 +83,20 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         node_set = self._model.get_node_set()
         node_set.destroyNodesConditional(mesh_coordinates)
 
-        inputs = os.path.join(output_directory, "ArgonSceneExporterWebGL_1.json")
         import_data_into_region(output_region, inputs, mesh_coordinate_field_name)
 
         # Delete the WebGL JSON files.
         os.remove(inputs)
-        os.remove(os.path.join(output_directory, "ArgonSceneExporterWebGL_metadata.json"))
+        os.remove(os.path.join(self._location, "ArgonSceneExporterWebGL_metadata.json"))
+
+    def _export_segmentation_graphics(self):
+        # Export the scene into a WebGL JSON file.
+        self._hide_graphics()
+        scene = self._model.get_root_scene()
+        scene_filter = self._model.get_context().getScenefiltermodule().getDefaultScenefilter()
+        scene_exporter = ArgonSceneExporter(self._location)
+        scene_exporter.export_webgl_from_scene(scene, scene_filter)
+        self._show_graphics()
 
     def _hide_graphics(self):
         self._scene.set_outline_visibility(0)
@@ -107,7 +110,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def _done_execution(self):
         self._save_settings()
-        self._write_segmentation_surface()
+        self._import_segmentation_mesh()
         self._write_point_cloud()
         self._callback()
 
@@ -133,6 +136,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
         if os.path.isfile(self._output_file()):
             self._model.get_output_region().readFile(self._output_file())
+            self._export_segmentation_graphics()
 
     def _save_settings(self):
         if not os.path.exists(self._location):
@@ -184,3 +188,4 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._model.generate_points()
         self._scene.set_image_plane_visibility(self._ui.imagePlaneCheckBox.isChecked())
         self._scene.set_segmentation_visibility(self._ui.segmentationCheckBox.isChecked())
+        self._export_segmentation_graphics()
