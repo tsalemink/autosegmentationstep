@@ -78,13 +78,18 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._show_graphics()
 
         # Import the WebGL JSON file into Zinc.
-        region = self._model.get_output_region()
-        mesh_region = region.findChildByName('mesh')
-        if mesh_region.isValid():
-            region.removeChild(mesh_region)
-        mesh_region = region.createChild('mesh')
+        output_region = self._model.get_output_region()
+        output_field_module = output_region.getFieldmodule()
+        mesh_coordinate_field_name = 'mesh_coordinates'
+        mesh_coordinates = output_field_module.findFieldByName(mesh_coordinate_field_name)
+
+        mesh_2d = output_field_module.findMeshByDimension(2)
+        mesh_2d.destroyAllElements()
+        node_set = self._model.get_node_set()
+        node_set.destroyNodesConditional(mesh_coordinates)
+
         inputs = os.path.join(output_directory, "ArgonSceneExporterWebGL_1.json")
-        import_data_into_region(mesh_region, inputs)
+        import_data_into_region(output_region, inputs, mesh_coordinate_field_name)
 
         # Delete the WebGL JSON files.
         os.remove(inputs)
