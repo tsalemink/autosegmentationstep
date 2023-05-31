@@ -19,7 +19,7 @@ class AutoSegmentationScene(object):
         self._node_set = model.get_node_set()
 
         # Initialize the graphics.
-        self._create_outline_graphics()
+        self._outline_graphics = self._create_outline_graphics()
         self._iso_graphic = self._create_surface_graphics()
         self._segmentation_contour = self._create_segmentation_graphics()
         self._segmentation_contour_material = model.get_contour_material()
@@ -98,6 +98,9 @@ class AutoSegmentationScene(object):
     def set_contour_alpha(self, value):
         self._segmentation_contour_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
 
+    def set_outline_visibility(self, state):
+        self._outline_graphics.setVisibilityFlag(state != 0)
+
     def set_image_plane_visibility(self, state):
         self._iso_graphic.setVisibilityFlag(state != 0)
 
@@ -112,11 +115,6 @@ class AutoSegmentationScene(object):
 
     def set_segmentation_value(self, value):
         self._segmentation_contour.setListIsovalues([value / 10000.0])
-
-    def generate_points(self):
-        self.set_image_plane_visibility(0)
-        self._model.generate_points()
-        self.set_image_plane_visibility(1)
 
     def get_tessellation_divisions(self):
         return self._segmentation_contour.getTessellation().getMinimumDivisions(3)[1]

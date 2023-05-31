@@ -3,11 +3,14 @@ Created: April, 2023
 
 @author: tsalemink
 """
-import json
 import os
+import json
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
+from cmlibs.zinc.field import Field
+from cmlibs.exporter.webgl import ArgonSceneExporter
+from cmlibs.importer.webgl import import_data_into_region
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
@@ -46,7 +49,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationCheckBox.stateChanged.connect(self._scene.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._scene.set_point_cloud_visibility)
         self._ui.segmentationAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_contour_alpha)
-        self._ui.generatePointsButton.clicked.connect(self._scene.generate_points)
+        self._ui.generatePointsButton.clicked.connect(self.generate_points)
         self._ui.doneButton.clicked.connect(self._done_execution)
 
     def register_done_execution(self, done_execution):
@@ -62,10 +65,52 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        self._model.get_point_cloud_region().writeFile(self._output_file())
+        self._model.get_output_region().writeFile(self._output_file())
+
+    def _import_segmentation_mesh(self):
+        inputs = os.path.join(self._location, "ArgonSceneExporterWebGL_1.json")
+        if not os.path.exists(inputs):
+            return
+
+        # Import the WebGL JSON file into Zinc.
+        output_region = self._model.get_output_region()
+        output_field_module = output_region.getFieldmodule()
+        mesh_coordinate_field_name = 'mesh_coordinates'
+        mesh_coordinates = output_field_module.findFieldByName(mesh_coordinate_field_name)
+
+        mesh_2d = output_field_module.findMeshByDimension(2)
+        mesh_2d.destroyAllElements()
+        node_set = self._model.get_node_set()
+        node_set.destroyNodesConditional(mesh_coordinates)
+
+        import_data_into_region(output_region, inputs, mesh_coordinate_field_name)
+
+        # Delete the WebGL JSON files.
+        os.remove(inputs)
+        os.remove(os.path.join(self._location, "ArgonSceneExporterWebGL_metadata.json"))
+
+    def _export_segmentation_graphics(self):
+        # Export the scene into a WebGL JSON file.
+        self._hide_graphics()
+        scene = self._model.get_root_scene()
+        scene_filter = self._model.get_context().getScenefiltermodule().getDefaultScenefilter()
+        scene_exporter = ArgonSceneExporter(self._location)
+        scene_exporter.export_webgl_from_scene(scene, scene_filter)
+        self._show_graphics()
+
+    def _hide_graphics(self):
+        self._scene.set_outline_visibility(0)
+        self._scene.set_image_plane_visibility(0)
+        self._scene.set_point_cloud_visibility(0)
+
+    def _show_graphics(self):
+        self._scene.set_outline_visibility(1)
+        self._scene.set_image_plane_visibility(1)
+        self._scene.set_point_cloud_visibility(1)
 
     def _done_execution(self):
         self._save_settings()
+        self._import_segmentation_mesh()
         self._write_point_cloud()
         self._callback()
 
@@ -90,7 +135,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
                 self._ui.segmentationAlphaDoubleSpinBox.setValue(settings["alpha"])
 
         if os.path.isfile(self._output_file()):
-            self._model.get_point_cloud_region().readFile(self._output_file())
+            self._model.get_output_region().readFile(self._output_file())
+            self._export_segmentation_graphics()
 
     def _save_settings(self):
         if not os.path.exists(self._location):
@@ -135,3 +181,11 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         text = self._ui.tessellationDivisionsLineEdit.text()
         divisions_list = [int(x.strip()) for x in text.split(',')]
         self._scene.set_tessellation_divisions(divisions_list)
+
+    def generate_points(self):
+        self._scene.set_image_plane_visibility(0)
+        self._scene.set_segmentation_visibility(1)
+        self._model.generate_points()
+        self._scene.set_image_plane_visibility(self._ui.imagePlaneCheckBox.isChecked())
+        self._scene.set_segmentation_visibility(self._ui.segmentationCheckBox.isChecked())
+        self._export_segmentation_graphics()
