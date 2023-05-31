@@ -10,6 +10,7 @@ from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field, FieldImage
 
 from cmlibs.utils.zinc.finiteelement import create_cube_element
+from cmlibs.utils.zinc.field import create_field_coordinates
 
 
 # TODO: Also, should the material and glyph methods go in the scene...?
@@ -125,9 +126,7 @@ class AutoSegmentationModel(object):
     def _setup_output_region(self):
         field_module = self._point_cloud_region.getFieldmodule()
 
-        output_coordinates = field_module.createFieldFiniteElement(3)
-        output_coordinates.setName('coordinates')
-        output_coordinates.setManaged(True)
+        output_coordinates = create_field_coordinates(field_module)
 
         node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
 
