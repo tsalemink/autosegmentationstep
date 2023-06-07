@@ -90,6 +90,9 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         os.remove(os.path.join(self._location, "ArgonSceneExporterWebGL_metadata.json"))
 
     def _export_segmentation_graphics(self):
+        if not os.path.exists(self._location):
+            os.makedirs(self._location)
+
         # Export the scene into a WebGL JSON file.
         self._hide_graphics()
         scene = self._model.get_root_scene()
