@@ -37,6 +37,13 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
+        self.addPort([('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#exf_file'),
+                      ('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location')
+                      ])
         self._config = {
             'identifier': ''
         }
@@ -72,5 +79,7 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self._input_image_data = data_in
 
     def getPortData(self, index):
-        output_filename = self._widget.get_output_filename()
-        return output_filename
+        if index == 2:
+            return self._widget.get_segmentation_graphics_filename()
+
+        return self._widget.get_output_filename()

@@ -8,9 +8,9 @@ import json
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
-from cmlibs.zinc.field import Field
 from cmlibs.exporter.webgl import ArgonSceneExporter
 from cmlibs.importer.webgl import import_data_into_region
+from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
@@ -55,9 +55,6 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
     def register_done_execution(self, done_execution):
         self._callback = done_execution
 
-    def _output_file(self):
-        return os.path.join(self._location, "point-cloud.exf")
-
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
 
@@ -65,27 +62,26 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        self._model.get_output_region().writeFile(self._output_file())
+        self._model.get_output_region().writeFile(self.get_output_filename())
 
-    def _import_segmentation_mesh(self):
+    def _transform_webgl_to_exf(self):
         inputs = os.path.join(self._location, "ArgonSceneExporterWebGL_1.json")
         if not os.path.exists(inputs):
             return
 
-        # Import the WebGL JSON file into Zinc.
-        output_region = self._model.get_output_region()
-        output_field_module = output_region.getFieldmodule()
-        mesh_coordinate_field_name = 'mesh_coordinates'
-        mesh_coordinates = output_field_module.findFieldByName(mesh_coordinate_field_name)
+        root_region = self._model.get_root_region()
+        temp_region = root_region.createChild("__temp")
 
-        mesh_2d = output_field_module.findMeshByDimension(2)
-        mesh_2d.destroyAllElements()
-        node_set = self._model.get_node_set()
-        node_set.destroyNodesConditional(mesh_coordinates)
+        field_module = temp_region.getFieldmodule()
+        coordinate_field = create_field_coordinates(field_module)
 
-        import_data_into_region(output_region, inputs, mesh_coordinate_field_name)
+        coordinate_field_name = coordinate_field.getName()
+        import_data_into_region(temp_region, inputs, coordinate_field_name)
+
+        temp_region.writeFile(self.get_segmentation_graphics_filename())
 
         # Delete the WebGL JSON files.
+        root_region.removeChild(temp_region)
         os.remove(inputs)
         os.remove(os.path.join(self._location, "ArgonSceneExporterWebGL_metadata.json"))
 
@@ -97,6 +93,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         scene_exporter = ArgonSceneExporter(self._location)
         scene_exporter.export_webgl_from_scene(scene, scene_filter)
         self._show_graphics()
+        self._transform_webgl_to_exf()
 
     def _hide_graphics(self):
         self._scene.set_outline_visibility(0)
@@ -110,7 +107,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def _done_execution(self):
         self._save_settings()
-        self._import_segmentation_mesh()
+        # self._import_segmentation_mesh()
         self._write_point_cloud()
         self._callback()
 
@@ -134,9 +131,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             if "alpha" in settings:
                 self._ui.segmentationAlphaDoubleSpinBox.setValue(settings["alpha"])
 
-        if os.path.isfile(self._output_file()):
-            self._model.get_output_region().readFile(self._output_file())
-            self._export_segmentation_graphics()
+        if os.path.isfile(self.get_output_filename()):
+            self._model.get_output_region().readFile(self.get_output_filename())
 
     def _save_settings(self):
         if not os.path.exists(self._location):
@@ -159,7 +155,10 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._location = location
 
     def get_output_filename(self):
-        return self._output_file()
+        return os.path.join(self._location, "point-cloud.exf")
+
+    def get_segmentation_graphics_filename(self):
+        return os.path.join(self._location, "segmentation-graphics.exf")
 
     def _set_line_edit_value(self, value):
         if self.sender() == self._ui.isoValueSlider:
