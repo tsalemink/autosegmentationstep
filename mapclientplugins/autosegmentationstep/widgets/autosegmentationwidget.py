@@ -5,6 +5,8 @@ Created: April, 2023
 """
 import os
 import json
+import pathlib
+import hashlib
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
@@ -20,15 +22,17 @@ from mapclientplugins.autosegmentationstep.widgets.ui_autosegmentationwidget imp
 
 class AutoSegmentationWidget(QtWidgets.QWidget):
 
-    def __init__(self, image_data_location, parent=None):
+    def __init__(self, image_data, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self._ui = Ui_AutoSegmentationWidget()
         self._ui.setupUi(self)
 
         self._callback = None
         self._location = None
+        self._input_hash = None
 
-        self._model = AutoSegmentationModel(image_data_location)
+        self._image_data = image_data
+        self._model = AutoSegmentationModel(image_data)
         self._scene = AutoSegmentationScene(self._model)
         self._view = self._ui.zincWidget
 
@@ -98,6 +102,11 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._show_graphics()
         self._transform_webgl_to_exf()
 
+    def _generate_input_hash(self):
+        normalised_file_paths = [pathlib.PureWindowsPath(os.path.relpath(file_path, self._location)).as_posix()
+                                 for file_path in self._image_data.image_files()]
+        return hashlib.md5(json.dumps(normalised_file_paths).encode('utf-8')).hexdigest()
+
     def _hide_graphics(self):
         self._scene.set_outline_visibility(0)
         self._scene.set_image_plane_visibility(0)
@@ -115,9 +124,14 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._callback()
 
     def load_settings(self):
+        self._input_hash = self._generate_input_hash()
         if os.path.isfile(self._settings_file()):
             with open(self._settings_file()) as f:
                 settings = json.load(f)
+
+            if "input-hash" in settings:
+                if self._input_hash != settings["input-hash"]:
+                    return
 
             if "iso-value" in settings:
                 self._ui.isoValueSlider.setValue(int(settings["iso-value"]))
@@ -142,6 +156,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             os.makedirs(self._location)
 
         settings = {
+            "input-hash": self._input_hash,
             "iso-value": self._ui.isoValueSlider.value(),
             "contour-value": self._ui.segmentationValueSlider.value(),
             "image-plane": self._ui.imagePlaneCheckBox.isChecked(),
