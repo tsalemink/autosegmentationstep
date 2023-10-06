@@ -18,10 +18,13 @@ This file is part of MAP Client. (http://launchpad.net/mapclient)
     along with MAP Client.  If not, see <http://www.gnu.org/licenses/>..
 """
 import os
+import json
 
 from PySide6 import QtGui
 
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
+
+from mapclientplugins.pointcloudpartitionerstep.configuredialog import ConfigureDialog
 from mapclientplugins.autosegmentationstep.widgets.autosegmentationwidget import AutoSegmentationWidget
 
 
@@ -52,7 +55,17 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self._input_image_data = None
 
     def configure(self):
-        return self._configured
+        dlg = ConfigureDialog(self._main_window)
+        dlg.identifierOccursCount = self._identifierOccursCount
+        dlg.set_config(self._config)
+        dlg.validate()
+        dlg.setModal(True)
+
+        if dlg.exec_():
+            self._config = dlg.get_config()
+
+        self._configured = dlg.validate()
+        self._configuredObserver()
 
     def getIdentifier(self):
         return self._config['identifier']
@@ -61,10 +74,15 @@ class AutoSegmentationStep(WorkflowStepMountPoint):
         self._config['identifier'] = identifier
 
     def serialize(self):
-        pass
+        return json.dumps(self._config, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def deserialize(self, string):
-        pass
+        self._config.update(json.loads(string))
+
+        d = ConfigureDialog()
+        d.identifierOccursCount = self._identifierOccursCount
+        d.set_config(self._config)
+        self._configured = d.validate()
 
     def execute(self):
         if not self._widget:
