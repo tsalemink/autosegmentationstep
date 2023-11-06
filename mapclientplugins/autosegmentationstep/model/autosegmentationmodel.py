@@ -127,7 +127,7 @@ class AutoSegmentationModel(object):
 
         output_coordinates = create_field_coordinates(field_module)
 
-        node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+        node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
 
         return output_coordinates, node_set
 
