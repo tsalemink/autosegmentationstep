@@ -40,6 +40,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._view.register_handler(SceneManipulation())
 
         self._setup_tessellation_line_edit()
+        display_dimensions = ", ".join([f"{d}" for d in self._model.get_dimensions()])
+        self._ui.imagePixelOutputLabel.setText(f"{display_dimensions} px")
 
         self._make_connections()
 
@@ -49,11 +51,13 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationValueSlider.valueChanged.connect(self._scene.set_segmentation_value)
         self._ui.segmentationValueSlider.valueChanged.connect(self._set_line_edit_value)
         self._ui.tessellationDivisionsLineEdit.editingFinished.connect(self._update_tessellation)
+        self._ui.allowHighTessellationsCheckBox.stateChanged.connect(self._set_tessellation_validator)
         self._ui.imagePlaneCheckBox.stateChanged.connect(self._scene.set_image_plane_visibility)
         self._ui.segmentationCheckBox.stateChanged.connect(self._scene.set_segmentation_visibility)
         self._ui.pointCloudCheckBox.stateChanged.connect(self._scene.set_point_cloud_visibility)
+        self._ui.outlineCheckBox.stateChanged.connect(self._scene.set_outline_visibility)
         self._ui.segmentationAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_contour_alpha)
-        self._ui.generatePointsButton.clicked.connect(self.generate_points)
+        self._ui.generatePointsButton.clicked.connect(self._generate_points)
         self._ui.doneButton.clicked.connect(self._done_execution)
 
     def register_done_execution(self, done_execution):
@@ -99,7 +103,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         scene_filter = self._model.get_context().getScenefiltermodule().getDefaultScenefilter()
         scene_exporter = ArgonSceneExporter(self._location)
         scene_exporter.export_webgl_from_scene(scene, scene_filter)
-        self._show_graphics()
+        self._reinstate_graphics()
         self._transform_webgl_to_exf()
 
     def _generate_input_hash(self):
@@ -112,10 +116,11 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_image_plane_visibility(0)
         self._scene.set_point_cloud_visibility(0)
 
-    def _show_graphics(self):
-        self._scene.set_outline_visibility(1)
-        self._scene.set_image_plane_visibility(1)
-        self._scene.set_point_cloud_visibility(1)
+    def _reinstate_graphics(self):
+        self._scene.set_outline_visibility(1 if self._ui.outlineCheckBox.isChecked() else 0)
+        self._scene.set_segmentation_visibility(1 if self._ui.segmentationCheckBox.isChecked() else 0)
+        self._scene.set_image_plane_visibility(1 if self._ui.imagePlaneCheckBox.isChecked() else 0)
+        self._scene.set_point_cloud_visibility(1 if self._ui.pointCloudCheckBox.isChecked() else 0)
 
     def _done_execution(self):
         self._save_settings()
@@ -133,20 +138,17 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
                 if self._input_hash != settings["input-hash"]:
                     return
 
-            if "iso-value" in settings:
-                self._ui.isoValueSlider.setValue(int(settings["iso-value"]))
-            if "contour-value" in settings:
-                self._ui.segmentationValueSlider.setValue(int(settings["contour-value"]))
-            if "image-plane" in settings:
-                self._ui.imagePlaneCheckBox.setChecked(settings["image-plane"])
-            if "point-cloud" in settings:
-                self._ui.pointCloudCheckBox.setChecked(settings["point-cloud"])
-            if "segmentation" in settings:
-                self._ui.segmentationCheckBox.setChecked(settings["segmentation"])
-            if "tessellation" in settings:
-                self._ui.tessellationDivisionsLineEdit.setText(settings["tessellation"])
-            if "alpha" in settings:
-                self._ui.segmentationAlphaDoubleSpinBox.setValue(settings["alpha"])
+            self._ui.isoValueSlider.setValue(int(settings.get("iso-value", "0")))
+            self._ui.segmentationValueSlider.setValue(int(settings.get("contour-value", "0")))
+            self._ui.imagePlaneCheckBox.setChecked(settings.get("image-plane", True))
+            self._ui.pointCloudCheckBox.setChecked(settings.get("point-cloud", True))
+            self._ui.segmentationCheckBox.setChecked(settings.get("segmentation", True))
+            self._ui.outlineCheckBox.setChecked(settings.get("outline", True))
+            self._ui.tessellationDivisionsLineEdit.setText(settings.get("tessellation", "1, 1, 1"))
+            self._ui.segmentationAlphaDoubleSpinBox.setValue(settings.get("alpha", 1.0))
+            self._ui.allowHighTessellationsCheckBox.setChecked(settings.get("tessellation-override", False))
+            self._ui.overrideScalingCheckBox.setChecked(settings.get("scaling-override", False))
+            self._ui.scalingLineEdit.setText(settings.get("scaling", "1, 1, 1"))
 
         if os.path.isfile(self.get_output_filename()):
             self._model.get_output_region().readFile(self.get_output_filename())
@@ -162,8 +164,12 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             "image-plane": self._ui.imagePlaneCheckBox.isChecked(),
             "point-cloud": self._ui.pointCloudCheckBox.isChecked(),
             "segmentation": self._ui.segmentationCheckBox.isChecked(),
+            "outline": self._ui.outlineCheckBox.isChecked(),
             "tessellation": self._ui.tessellationDivisionsLineEdit.text(),
             "alpha": self._ui.segmentationAlphaDoubleSpinBox.value(),
+            "tessellation-override": self._ui.allowHighTessellationsCheckBox.isChecked(),
+            "scaling-override": self._ui.overrideScalingCheckBox.isChecked(),
+            "scaling": self._ui.scalingLineEdit.text(),
         }
 
         with open(self._settings_file(), "w") as f:
@@ -187,10 +193,14 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def _setup_tessellation_line_edit(self):
         divisions = self._scene.get_tessellation_divisions()
-        divisions = ",".join([str(i) for i in divisions])
+        divisions = ", ".join([str(i) for i in divisions])
         self._ui.tessellationDivisionsLineEdit.setText(divisions)
 
-        regex = QtCore.QRegularExpression("^[0-9]{1,3}((, ?[0-9]{1,3}){2})?$")
+        self._set_tessellation_validator()
+
+    def _set_tessellation_validator(self):
+        size = 5 if self._ui.allowHighTessellationsCheckBox else 3
+        regex = QtCore.QRegularExpression(f"^[0-9]{{1,{size}}}((, ?[0-9]{{1,{size}}}){{2}})?$")
         validator = QtGui.QRegularExpressionValidator(regex)
         self._ui.tessellationDivisionsLineEdit.setValidator(validator)
 
@@ -199,10 +209,10 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         divisions_list = [int(x.strip()) for x in text.split(',')]
         self._scene.set_tessellation_divisions(divisions_list)
 
-    def generate_points(self):
+    def _generate_points(self):
         self._scene.set_image_plane_visibility(0)
         self._scene.set_segmentation_visibility(1)
         self._model.generate_points()
-        self._scene.set_image_plane_visibility(self._ui.imagePlaneCheckBox.isChecked())
-        self._scene.set_segmentation_visibility(self._ui.segmentationCheckBox.isChecked())
+        # After the segmentation have been exported the graphics
+        # will be re-instated to the correct state.
         self._export_segmentation_graphics()

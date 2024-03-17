@@ -115,8 +115,8 @@ class AutoSegmentationModel(object):
         files = os.listdir(directory)
         files.sort(key=alphanum_key)
         for filename in files:
-            if filename not in ['.hg', 'annotation.rdf']:
-                string_name = str(os.path.join(directory, filename))
+            if filename not in ['.hg', 'annotation.rdf', '.DS_Store', '.git', '.gitignore']:
+                string_name = str(os.path.abspath(os.path.join(directory, filename)))
                 stream_information.createStreamresourceFile(string_name)
         image_field.read(stream_information)
 

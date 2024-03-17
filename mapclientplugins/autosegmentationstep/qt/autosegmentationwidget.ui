@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Auto Segmentation</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -188,79 +188,149 @@
          </layout>
         </item>
         <item>
-         <layout class="QGridLayout" name="gridLayout">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>Segmentation Contour Alpha:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0" colspan="2">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Segmentation Tessellation Divisions:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLineEdit" name="tessellationDivisionsLineEdit">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QDoubleSpinBox" name="segmentationAlphaDoubleSpinBox">
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="maximum">
-             <double>1.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.010000000000000</double>
-            </property>
-            <property name="value">
-             <double>1.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QGroupBox" name="groupBoxImage">
+          <property name="title">
+           <string>Image</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_2">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Dimensions:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="imagePixelOutputLabel">
+             <property name="text">
+              <string>AxBxC px</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="overrideScalingCheckBox">
+             <property name="text">
+              <string>Override pre-dertermined scaling</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="scalingLineEdit"/>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Scaling:</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <widget class="QCheckBox" name="imagePlaneCheckBox">
-            <property name="text">
-             <string>Image Plane</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="segmentationCheckBox">
-            <property name="text">
-             <string>Segmentation</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="pointCloudCheckBox">
-            <property name="text">
-             <string>Point Cloud</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QGroupBox" name="groupBoxSegmentation">
+          <property name="title">
+           <string>Segmentation</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Contour Alpha:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="segmentationAlphaDoubleSpinBox">
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.010000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="allowHighTessellationsCheckBox">
+             <property name="toolTip">
+              <string>High tessellations are turned off by default because it may take the contour calcuation en exceedingly long time</string>
+             </property>
+             <property name="text">
+              <string>Allow high tessellations</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Tessellation Divisions:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="tessellationDivisionsLineEdit">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBoxVisibility">
+          <property name="title">
+           <string>Visibility</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QCheckBox" name="imagePlaneCheckBox">
+             <property name="text">
+              <string>Image Plane</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="segmentationCheckBox">
+             <property name="text">
+              <string>Segmentation</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="pointCloudCheckBox">
+             <property name="text">
+              <string>Point Cloud</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="outlineCheckBox">
+             <property name="text">
+              <string>Outline</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </item>
