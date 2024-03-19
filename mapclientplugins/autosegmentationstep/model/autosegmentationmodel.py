@@ -26,11 +26,15 @@ class AutoSegmentationModel(object):
         self._input_image_data = input_image_data
         self._output_filename = None
 
-        self._image_field = self._initialise_image_field()
-        self._dimensions_px = self._image_field.getSizeInPixels(3)[1]
+        self._source_image_field = self._initialise_image_field()
+        self._dimensions_px = self._source_image_field.getSizeInPixels(3)[1]
+        self._scale = [1, 1, 1]
+        self._image_field = self._create_value_image_field()
+
         self._scalar_field = self._create_finite_elements()
 
         self._output_coordinates, self._node_set = self._setup_output_region()
+        self._histogram = self._calculate_histo_data()
 
         self._define_standard_glyphs()
         self._point_cloud_material = None
@@ -64,6 +68,13 @@ class AutoSegmentationModel(object):
     def get_dimensions(self):
         return self._dimensions_px
 
+    def set_scale(self, scale):
+        self._scale = scale
+        self._update_mesh_nodes()
+
+    def get_scale(self):
+        return self._scale
+
     def get_output_coordinates(self):
         return self._output_coordinates
 
@@ -89,13 +100,8 @@ class AutoSegmentationModel(object):
     def _create_finite_elements(self):
         self._field_module.beginChange()
 
-        finite_element_field = self._field_module.createFieldFiniteElement(3)
-        finite_element_field.setName('coordinates')
-        finite_element_field.setManaged(True)
-        finite_element_field.setTypeCoordinate(True)
-
-        a, b, c = self._dimensions_px
-        node_coordinate_set = [[0, 0, 0], [a, 0, 0], [0, b, 0], [a, b, 0], [0, 0, c], [a, 0, c], [0, b, c], [a, b, c]]
+        node_coordinate_set = self._define_node_positions()
+        finite_element_field = create_field_coordinates(self._field_module, managed=True)
         mesh = self._field_module.findMeshByDimension(3)
         create_cube_element(mesh, finite_element_field, node_coordinate_set)
         scalar_field = self._field_module.createFieldComponent(finite_element_field, 3)
@@ -105,20 +111,54 @@ class AutoSegmentationModel(object):
 
         return scalar_field
 
+    def _define_node_positions(self):
+        a, b, c = self._dimensions_px
+        # Set a stretch factor to centre pixels at integer values.
+        s = 0.5
+        sx, sy, sz = tuple(self._scale)
+        return [[0 - s, 0 - s, 0 - s], [sx * a + s, 0 - s, 0 - s], [0 - s, sy * b + s, 0 - s], [sx * a + s, sy * b + s, 0 - s],
+                [0 - s, 0 - s, sz * c + s], [sx * a + s, 0 - s, sz * c + s], [0 - s, sy * b + s, sz * c + s], [sx * a + s, sy * b + s, sz * c + s]]
+
+    def _update_mesh_nodes(self):
+        node_set = self._field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+        field_cache = self._field_module.createFieldcache()
+        coordinate_field = self._field_module.findFieldByName('coordinates')
+        node_positions = self._define_node_positions()
+        node_iterator = node_set.createNodeiterator()
+        node = node_iterator.next()
+        while node.isValid():
+            index = node.getIdentifier() - 1
+            field_cache.setNode(node)
+            coordinate_field.assignReal(field_cache, node_positions[index])
+            node = node_iterator.next()
+
     def _initialise_image_field(self):
         image_field = self._field_module.createFieldImage()
         image_field.setFilterMode(FieldImage.FILTER_MODE_LINEAR)
         image_field.setWrapMode(FieldImage.WRAP_MODE_CLAMP)
 
         stream_information = image_field.createStreaminformationImage()
-        directory = self._input_image_data.location()
-        files = os.listdir(directory)
-        files.sort(key=alphanum_key)
-        for filename in files:
-            if filename not in ['.hg', 'annotation.rdf', '.DS_Store', '.git', '.gitignore']:
-                string_name = str(os.path.abspath(os.path.join(directory, filename)))
-                stream_information.createStreamresourceFile(string_name)
+        for image_name in self._input_image_data.image_files():
+            stream_information.createStreamresourceFile(image_name)
+
         image_field.read(stream_information)
+
+        return image_field
+
+    def _create_value_image_field(self):
+        image_field = self._source_image_field
+        if image_field.getNumberOfComponents() == 3:
+            # Convert to intensity/grayscale image.
+            component_1 = self._field_module.createFieldComponent(image_field, 1)
+            component_2 = self._field_module.createFieldComponent(image_field, 2)
+            component_3 = self._field_module.createFieldComponent(image_field, 3)
+            # PAL, NTSC scaling.
+            scale_1 = self._field_module.createFieldConstant(0.299)
+            scale_2 = self._field_module.createFieldConstant(0.587)
+            scale_3 = self._field_module.createFieldConstant(0.114)
+            luminance_field = scale_1 * component_1 + scale_2 * component_2 + scale_3 * component_3
+            # image_field = self._field_module.createFieldImageFromSource(luminance_field)
+            image_field = luminance_field
 
         return image_field
 
@@ -131,26 +171,39 @@ class AutoSegmentationModel(object):
 
         return output_coordinates, node_set
 
-    def generate_points(self):
+    def _calculate_histo_data(self):
+        self._field_module.beginChange()
+        field_cache = self._field_module.createFieldcache()
+        mesh = self._field_module.findMeshByDimension(3)
+        element_iterator = mesh.createElementiterator()
+        element = element_iterator.next()
+        dim = self._dimensions_px
+
+        bin_count = 100
+        total = dim[1] * dim[1] * dim[2]
+        bins = [0] * bin_count
+
+        # for i in range(dim[0]):
+        #     for j in range(dim[1]):
+        #         for k in range(dim[2]):
+        #             xi = [i / dim[0], j / dim[1], k / dim[2]]
+        #             field_cache.setMeshLocation(element, xi)
+        #             _, value = self._image_field.evaluateMeshLocation(field_cache, 1)
+        #             value_index = int(value * bin_count + 0.5)
+        #             bins[value_index] += 1
+
+        self._field_module.endChange()
+        bins = [b / total for b in bins]
+        return bins
+
+    def get_histogram_data(self):
+        return self._histogram
+
+    def generate_points(self, point_density=100):
         self._node_set.destroyAllNodes()
         graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
-        surface_density = 10000 / min(self._dimensions_px) ** 2
-        self._root_scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, surface_density, 1.0)
+        self._root_scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, point_density, 1.0)
+        print(f'number of points: {self._node_set.getSize()}')
 
     def get_output_filename(self):
         return self._output_filename
-
-
-def try_int(s):
-    try:
-        return int(s)
-    except (TypeError, ValueError):
-        return s
-
-
-def alphanum_key(s):
-    """
-    Turn a string into a list of string and number chunks.
-    "z23a" -> ["z", 23, "a"]
-    """
-    return [try_int(c) for c in re.split('([0-9]+)', s)]

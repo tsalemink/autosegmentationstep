@@ -189,6 +189,26 @@ class Ui_AutoSegmentationWidget(object):
 
         self.formLayout.setWidget(2, QFormLayout.FieldRole, self.tessellationDivisionsLineEdit)
 
+        self.label_5 = QLabel(self.groupBoxSegmentation)
+        self.label_5.setObjectName(u"label_5")
+
+        self.formLayout.setWidget(3, QFormLayout.LabelRole, self.label_5)
+
+        self.pointDensityLineEdit = QLineEdit(self.groupBoxSegmentation)
+        self.pointDensityLineEdit.setObjectName(u"pointDensityLineEdit")
+
+        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.pointDensityLineEdit)
+
+        self.label_8 = QLabel(self.groupBoxSegmentation)
+        self.label_8.setObjectName(u"label_8")
+
+        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.label_8)
+
+        self.pointSizeLineEdit = QLineEdit(self.groupBoxSegmentation)
+        self.pointSizeLineEdit.setObjectName(u"pointSizeLineEdit")
+
+        self.formLayout.setWidget(4, QFormLayout.FieldRole, self.pointSizeLineEdit)
+
 
         self.verticalLayout_3.addWidget(self.groupBoxSegmentation)
 
@@ -250,6 +270,11 @@ class Ui_AutoSegmentationWidget(object):
 
         self.horizontalLayout.addWidget(self.generatePointsButton)
 
+        self.histogramPushButton = QPushButton(AutoSegmentationWidget)
+        self.histogramPushButton.setObjectName(u"histogramPushButton")
+
+        self.horizontalLayout.addWidget(self.histogramPushButton)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
@@ -286,12 +311,15 @@ class Ui_AutoSegmentationWidget(object):
         self.allowHighTessellationsCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Allow high tessellations", None))
         self.label_4.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Tessellation Divisions:", None))
         self.tessellationDivisionsLineEdit.setText("")
+        self.label_5.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Density:", None))
+        self.label_8.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Size:", None))
         self.groupBoxVisibility.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Visibility", None))
         self.imagePlaneCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane", None))
         self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
         self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))
         self.outlineCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Outline", None))
         self.generatePointsButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Generate Points", None))
+        self.histogramPushButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Show Histogram", None))
         self.doneButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"&Done", None))
     # retranslateUi
 
