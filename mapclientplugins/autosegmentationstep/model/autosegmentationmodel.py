@@ -203,7 +203,6 @@ class AutoSegmentationModel(object):
         self._node_set.destroyAllNodes()
         graphics_filter = self._context.getScenefiltermodule().getDefaultScenefilter()
         self._root_scene.convertToPointCloud(graphics_filter, self._node_set, self._output_coordinates, 0.0, 0.0, point_density, 1.0)
-        print(f'number of points: {self._node_set.getSize()}')
 
     def get_output_filename(self):
         return self._output_filename
