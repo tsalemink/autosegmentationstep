@@ -45,7 +45,7 @@ class AutoSegmentationScene(object):
         finite_element_field = field_module.findFieldByName('coordinates')
         xi_field = field_module.findFieldByName('xi')
         scalar_field = self._model.get_scalar_field()
-        image_field = self._model.get_image_field()
+        image_field = self._model.get_source_image_field()
 
         material_module = self._context.getMaterialmodule()
         material = material_module.createMaterial()

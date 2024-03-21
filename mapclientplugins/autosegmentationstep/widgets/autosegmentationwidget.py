@@ -178,6 +178,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             self._model.get_output_region().readFile(self.get_output_filename())
 
         self._update_point_size()
+        self._update_scale()
 
     def _save_settings(self):
         if not os.path.exists(self._location):

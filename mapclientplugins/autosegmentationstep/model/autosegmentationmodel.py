@@ -62,6 +62,9 @@ class AutoSegmentationModel(object):
     def get_image_field(self):
         return self._image_field
 
+    def get_source_image_field(self):
+        return self._source_image_field
+
     def get_scalar_field(self):
         return self._scalar_field
 
@@ -116,8 +119,8 @@ class AutoSegmentationModel(object):
         # Set a stretch factor to centre pixels at integer values.
         s = 0.5
         sx, sy, sz = tuple(self._scale)
-        return [[0 - s, 0 - s, 0 - s], [sx * a + s, 0 - s, 0 - s], [0 - s, sy * b + s, 0 - s], [sx * a + s, sy * b + s, 0 - s],
-                [0 - s, 0 - s, sz * c + s], [sx * a + s, 0 - s, sz * c + s], [0 - s, sy * b + s, sz * c + s], [sx * a + s, sy * b + s, sz * c + s]]
+        return [[0 - s, 0 - s, 0 - s], [sx * a - s, 0 - s, 0 - s], [0 - s, sy * b - s, 0 - s], [sx * a - s, sy * b - s, 0 - s],
+                [0 - s, 0 - s, sz * c - s], [sx * a - s, 0 - s, sz * c - s], [0 - s, sy * b - s, sz * c - s], [sx * a - s, sy * b - s, sz * c - s]]
 
     def _update_mesh_nodes(self):
         node_set = self._field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
