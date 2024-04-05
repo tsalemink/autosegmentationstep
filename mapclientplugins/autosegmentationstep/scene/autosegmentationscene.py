@@ -17,6 +17,7 @@ class AutoSegmentationScene(object):
         self._dimensions = model.get_dimensions()
         self._output_coordinates = model.get_output_coordinates()
         self._node_set = model.get_node_set()
+        self._scale_field = model.get_field_module().createFieldConstant(model.get_scale())
 
         # Initialize the graphics.
         self._outline_graphics = self._create_outline_graphics()
@@ -44,7 +45,7 @@ class AutoSegmentationScene(object):
         finite_element_field = field_module.findFieldByName('coordinates')
         xi_field = field_module.findFieldByName('xi')
         scalar_field = self._model.get_scalar_field()
-        image_field = self._model.get_image_field()
+        image_field = self._model.get_source_image_field()
 
         material_module = self._context.getMaterialmodule()
         material = material_module.createMaterial()
@@ -64,14 +65,14 @@ class AutoSegmentationScene(object):
 
     def _create_segmentation_graphics(self):
         field_module = self._model.get_field_module()
-        scale_field = self._model.get_field_module().createFieldConstant(self._dimensions)
+        dimension_field = field_module.createFieldConstant(self._dimensions)
         xi_field = field_module.findFieldByName('xi')
-        scaled_xi_field = xi_field * scale_field
+        scaled_xi_field = xi_field * self._scale_field * dimension_field
         image_field = self._model.get_image_field()
 
         tessellation_module = self._context.getTessellationmodule()
         tessellation = tessellation_module.createTessellation()
-        tessellation.setMinimumDivisions([256, 125, 128])
+        tessellation.setMinimumDivisions([int(d / 2 + 0.5) for d in self._dimensions])
 
         self._root_scene.beginChange()
         segmentation_contour = self._root_scene.createGraphicsContours()
@@ -86,14 +87,18 @@ class AutoSegmentationScene(object):
     def _create_point_cloud_graphics(self):
         self._output_scene.beginChange()
         point_cloud = self._output_scene.createGraphicsPoints()
-        point_cloud.setFieldDomainType(Field.DOMAIN_TYPE_NODES)
+        point_cloud.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
         point_cloud.setCoordinateField(self._output_coordinates)
         attributes = point_cloud.getGraphicspointattributes()
         attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
-        attributes.setBaseSize([min(self._dimensions) / 100])
+        # attributes.setBaseSize([min(self._dimensions) / 100])
         self._output_scene.endChange()
 
         return point_cloud
+
+    def set_point_size(self, value):
+        attributes = self._point_cloud.getGraphicspointattributes()
+        attributes.setBaseSize(value)
 
     def set_contour_alpha(self, value):
         self._segmentation_contour_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
@@ -111,7 +116,8 @@ class AutoSegmentationScene(object):
         self._point_cloud.setVisibilityFlag(state != 0)
 
     def set_slider_value(self, value):
-        self._iso_graphic.setListIsovalues([value * self._dimensions[2] / 100])
+        z_scale = self._model.get_scale()[2]
+        self._iso_graphic.setListIsovalues([value * self._dimensions[2] * z_scale / 100])
 
     def set_segmentation_value(self, value):
         self._segmentation_contour.setListIsovalues([value / 10000.0])
@@ -121,3 +127,8 @@ class AutoSegmentationScene(object):
 
     def set_tessellation_divisions(self, divisions):
         self._segmentation_contour.getTessellation().setMinimumDivisions(divisions)
+
+    def update_scale(self):
+        field_module = self._model.get_field_module()
+        field_cache = field_module.createFieldcache()
+        self._scale_field.assignReal(field_cache, self._model.get_scale())
