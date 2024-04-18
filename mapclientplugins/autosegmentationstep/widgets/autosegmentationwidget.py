@@ -249,10 +249,11 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_tessellation_divisions(divisions_list)
 
     def _update_point_size(self):
-        self._scene.set_point_size(float(self._ui.pointSizeLineEdit.text()))
+        size = self._ui.pointSizeLineEdit.text() if self._ui.pointSizeLineEdit.text() else '1'
+        self._scene.set_point_size(float(size))
 
     def _update_scale(self):
-        text = self._ui.scalingLineEdit.text()
+        text = self._ui.scalingLineEdit.text() if self._ui.scalingLineEdit.text() else '1, 1, 1'
         scale = [float(x.strip()) for x in text.split(',')]
         self._model.set_scale(scale)
         self._scene.update_scale()
