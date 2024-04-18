@@ -8,7 +8,7 @@ import json
 import pathlib
 import hashlib
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
