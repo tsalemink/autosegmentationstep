@@ -24,7 +24,7 @@ from PySide6 import QtGui
 
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 
-from mapclientplugins.pointcloudpartitionerstep.configuredialog import ConfigureDialog
+from mapclientplugins.autosegmentationstep.configuredialog import ConfigureDialog
 from mapclientplugins.autosegmentationstep.widgets.autosegmentationwidget import AutoSegmentationWidget
 
 
