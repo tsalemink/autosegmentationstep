@@ -153,26 +153,34 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         if os.path.isfile(self._settings_file()):
             with open(self._settings_file()) as f:
                 settings = json.load(f)
+        else:
+            settings = {}
 
-            if "input-hash" in settings:
-                if self._input_hash != settings["input-hash"]:
-                    return
+        if "input-hash" in settings:
+            if self._input_hash != settings["input-hash"]:
+                return
 
-            self._ui.isoValueSlider.setValue(int(settings.get("iso-value", "0")))
-            self._ui.segmentationValueSlider.setValue(int(settings.get("contour-value", "0")))
-            self._ui.imagePlaneCheckBox.setChecked(settings.get("image-plane", True))
-            self._ui.pointCloudCheckBox.setChecked(settings.get("point-cloud", True))
-            self._ui.segmentationCheckBox.setChecked(settings.get("segmentation", True))
-            self._ui.outlineCheckBox.setChecked(settings.get("outline", True))
-            self._ui.tessellationDivisionsLineEdit.setText(settings.get("tessellation", "1, 1, 1"))
-            self._ui.segmentationAlphaDoubleSpinBox.setValue(settings.get("alpha", 1.0))
-            self._ui.allowHighTessellationsCheckBox.setChecked(settings.get("tessellation-override", False))
-            self._ui.overrideScalingCheckBox.setChecked(settings.get("scaling-override", False))
-            self._ui.scalingLineEdit.setText(settings.get("scaling", "1, 1, 1"))
+        self._ui.isoValueSlider.setValue(int(settings.get("iso-value", "0")))
+        self._ui.segmentationValueSlider.setValue(int(settings.get("contour-value", "0")))
+        self._ui.segmentationValueLineEdit.setText(f"{self._ui.segmentationValueSlider.value() / 10000.0}")
+        self._ui.imagePlaneCheckBox.setChecked(settings.get("image-plane", True))
+        self._ui.pointCloudCheckBox.setChecked(settings.get("point-cloud", True))
+        self._ui.segmentationCheckBox.setChecked(settings.get("segmentation", True))
+        self._ui.outlineCheckBox.setChecked(settings.get("outline", True))
+        self._ui.segmentationAlphaDoubleSpinBox.setValue(settings.get("alpha", 1.0))
+        self._ui.allowHighTessellationsCheckBox.setChecked(settings.get("tessellation-override", False))
+        self._ui.overrideScalingCheckBox.setChecked(settings.get("scaling-override", False))
+        self._ui.scalingLineEdit.setText(settings.get("scaling", "1, 1, 1"))
 
-            min_dim = min(self._model.get_dimensions())
-            self._ui.pointDensityLineEdit.setText(settings.get("point-density", f'{10000 / min_dim ** 2}'))
-            self._ui.pointSizeLineEdit.setText(settings.get("point-size", f'{min_dim / 100}'))
+        dimensions = self._model.get_dimensions()
+        min_dim = min(dimensions)
+        self._ui.tessellationDivisionsLineEdit.setText(settings.get("tessellation", ", ".join([str(int(d / 2 + 0.5)) for d in dimensions])))
+        self._ui.pointDensityLineEdit.setText(settings.get("point-density", f'{10000 / min_dim ** 2}'))
+        self._ui.pointSizeLineEdit.setText(settings.get("point-size", f'{min_dim / 100}'))
+
+        z_size = dimensions[2]
+        z_scale = self._model.get_scale()[2]
+        self._ui.isoValueLineEdit.setText(f"{self._ui.isoValueSlider.value() * z_size * z_scale / 100.0}")
 
         if os.path.isfile(self.get_output_filename()):
             self._model.get_output_region().readFile(self.get_output_filename())
@@ -249,11 +257,11 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_tessellation_divisions(divisions_list)
 
     def _update_point_size(self):
-        size = self._ui.pointSizeLineEdit.text() if self._ui.pointSizeLineEdit.text() else '1'
+        size = self._ui.pointSizeLineEdit.text()
         self._scene.set_point_size(float(size))
 
     def _update_scale(self):
-        text = self._ui.scalingLineEdit.text() if self._ui.scalingLineEdit.text() else '1, 1, 1'
+        text = self._ui.scalingLineEdit.text()
         scale = [float(x.strip()) for x in text.split(',')]
         self._model.set_scale(scale)
         self._scene.update_scale()

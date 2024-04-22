@@ -3,8 +3,7 @@ Created: April, 2023
 
 @author: tsalemink
 """
-import os
-import re
+import os.path
 
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field, FieldImage
