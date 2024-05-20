@@ -17,9 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QFormLayout,
     QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLayout, QLineEdit, QPushButton, QRadioButton,
-    QSizePolicy, QSlider, QSpacerItem, QVBoxLayout,
-    QWidget)
+    QLayout, QLineEdit, QPushButton, QSizePolicy,
+    QSlider, QSpacerItem, QVBoxLayout, QWidget)
 
 from mapclientplugins.autosegmentationstep.widgets.zincautosegmentationwidget import ZincAutoSegmentationWidget
 
@@ -248,24 +247,19 @@ class Ui_AutoSegmentationWidget(object):
         self.groupBoxDetectionPlane.setObjectName(u"groupBoxDetectionPlane")
         self.gridLayout = QGridLayout(self.groupBoxDetectionPlane)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.radioButtonToggleDetection = QRadioButton(self.groupBoxDetectionPlane)
-        self.radioButtonToggleDetection.setObjectName(u"radioButtonToggleDetection")
+        self.checkBoxReverseField = QCheckBox(self.groupBoxDetectionPlane)
+        self.checkBoxReverseField.setObjectName(u"checkBoxReverseField")
 
-        self.gridLayout.addWidget(self.radioButtonToggleDetection, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.checkBoxReverseField, 1, 0, 1, 1)
 
-        self.label_10 = QLabel(self.groupBoxDetectionPlane)
-        self.label_10.setObjectName(u"label_10")
+        self.detectionPlaneAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBoxDetectionPlane)
+        self.detectionPlaneAlphaDoubleSpinBox.setObjectName(u"detectionPlaneAlphaDoubleSpinBox")
+        self.detectionPlaneAlphaDoubleSpinBox.setDecimals(3)
+        self.detectionPlaneAlphaDoubleSpinBox.setMaximum(1.000000000000000)
+        self.detectionPlaneAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
+        self.detectionPlaneAlphaDoubleSpinBox.setValue(1.000000000000000)
 
-        self.gridLayout.addWidget(self.label_10, 1, 0, 1, 1)
-
-        self.segmentationMeshAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBoxDetectionPlane)
-        self.segmentationMeshAlphaDoubleSpinBox.setObjectName(u"segmentationMeshAlphaDoubleSpinBox")
-        self.segmentationMeshAlphaDoubleSpinBox.setDecimals(3)
-        self.segmentationMeshAlphaDoubleSpinBox.setMaximum(1.000000000000000)
-        self.segmentationMeshAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
-        self.segmentationMeshAlphaDoubleSpinBox.setValue(1.000000000000000)
-
-        self.gridLayout.addWidget(self.segmentationMeshAlphaDoubleSpinBox, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.detectionPlaneAlphaDoubleSpinBox, 3, 1, 1, 1)
 
         self.label_9 = QLabel(self.groupBoxDetectionPlane)
         self.label_9.setObjectName(u"label_9")
@@ -275,16 +269,26 @@ class Ui_AutoSegmentationWidget(object):
         sizePolicy3.setHeightForWidth(self.label_9.sizePolicy().hasHeightForWidth())
         self.label_9.setSizePolicy(sizePolicy3)
 
-        self.gridLayout.addWidget(self.label_9, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.label_9, 3, 0, 1, 1)
 
-        self.detectionPlaneAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBoxDetectionPlane)
-        self.detectionPlaneAlphaDoubleSpinBox.setObjectName(u"detectionPlaneAlphaDoubleSpinBox")
-        self.detectionPlaneAlphaDoubleSpinBox.setDecimals(3)
-        self.detectionPlaneAlphaDoubleSpinBox.setMaximum(1.000000000000000)
-        self.detectionPlaneAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
-        self.detectionPlaneAlphaDoubleSpinBox.setValue(1.000000000000000)
+        self.checkBoxToggleDetection = QCheckBox(self.groupBoxDetectionPlane)
+        self.checkBoxToggleDetection.setObjectName(u"checkBoxToggleDetection")
 
-        self.gridLayout.addWidget(self.detectionPlaneAlphaDoubleSpinBox, 2, 1, 1, 1)
+        self.gridLayout.addWidget(self.checkBoxToggleDetection, 0, 0, 1, 1)
+
+        self.label_10 = QLabel(self.groupBoxDetectionPlane)
+        self.label_10.setObjectName(u"label_10")
+
+        self.gridLayout.addWidget(self.label_10, 2, 0, 1, 1)
+
+        self.segmentationMeshAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBoxDetectionPlane)
+        self.segmentationMeshAlphaDoubleSpinBox.setObjectName(u"segmentationMeshAlphaDoubleSpinBox")
+        self.segmentationMeshAlphaDoubleSpinBox.setDecimals(3)
+        self.segmentationMeshAlphaDoubleSpinBox.setMaximum(1.000000000000000)
+        self.segmentationMeshAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
+        self.segmentationMeshAlphaDoubleSpinBox.setValue(1.000000000000000)
+
+        self.gridLayout.addWidget(self.segmentationMeshAlphaDoubleSpinBox, 2, 1, 1, 1)
 
 
         self.verticalLayout_3.addWidget(self.groupBoxDetectionPlane)
@@ -365,9 +369,10 @@ class Ui_AutoSegmentationWidget(object):
         self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))
         self.outlineCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Outline", None))
         self.groupBoxDetectionPlane.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Detection Mode", None))
-        self.radioButtonToggleDetection.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Toggle On", None))
-        self.label_10.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Mesh Alpha", None))
+        self.checkBoxReverseField.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Reverse Visibility Field", None))
         self.label_9.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Plane Alpha:", None))
+        self.checkBoxToggleDetection.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Toggle On", None))
+        self.label_10.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Mesh Alpha", None))
         self.generatePointsButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Generate Points", None))
         self.histogramPushButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Show Histogram", None))
         self.doneButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"&Done", None))

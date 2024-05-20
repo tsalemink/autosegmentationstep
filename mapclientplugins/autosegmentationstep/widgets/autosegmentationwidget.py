@@ -78,7 +78,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_contour_alpha)
         self._ui.generatePointsButton.clicked.connect(self._generate_points)
         self._ui.histogramPushButton.clicked.connect(self._histogram_clicked)
-        self._ui.radioButtonToggleDetection.toggled.connect(self._toggle_detection_mode)
+        self._ui.checkBoxToggleDetection.stateChanged.connect(self._toggle_detection_mode)
+        self._ui.checkBoxReverseField.stateChanged.connect(self._model.reverse_visibility_field_direction)
         self._ui.segmentationMeshAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_mesh_alpha)
         self._ui.detectionPlaneAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.doneButton.clicked.connect(self._done_execution)
@@ -167,8 +168,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_segmentation_visibility(1 if self._ui.segmentationCheckBox.isChecked() else 0)
         self._scene.set_image_plane_visibility(1 if self._ui.imagePlaneCheckBox.isChecked() else 0)
         self._scene.set_point_cloud_visibility(1 if self._ui.pointCloudCheckBox.isChecked() else 0)
-        self._scene.set_detection_plane_visibility(1 if self._ui.radioButtonToggleDetection.isChecked() else 0)
-        self._scene.set_mesh_visibility(1 if self._ui.radioButtonToggleDetection.isChecked() else 0)
+        self._scene.set_detection_plane_visibility(1 if self._ui.checkBoxToggleDetection.isChecked() else 0)
+        self._scene.set_mesh_visibility(1 if self._ui.checkBoxToggleDetection.isChecked() else 0)
 
     def _done_execution(self):
         self._save_settings()

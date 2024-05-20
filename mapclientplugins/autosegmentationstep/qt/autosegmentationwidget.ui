@@ -358,22 +358,15 @@
            <string>Detection Mode</string>
           </property>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="0">
-            <widget class="QRadioButton" name="radioButtonToggleDetection">
-             <property name="text">
-              <string>Toggle On</string>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="0">
-            <widget class="QLabel" name="label_10">
+            <widget class="QCheckBox" name="checkBoxReverseField">
              <property name="text">
-              <string>Mesh Alpha</string>
+              <string>Reverse Visibility Field</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="segmentationMeshAlphaDoubleSpinBox">
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="detectionPlaneAlphaDoubleSpinBox">
              <property name="decimals">
               <number>3</number>
              </property>
@@ -388,7 +381,7 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item row="3" column="0">
             <widget class="QLabel" name="label_9">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -401,8 +394,22 @@
              </property>
             </widget>
            </item>
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="checkBoxToggleDetection">
+             <property name="text">
+              <string>Toggle On</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>Mesh Alpha</string>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="detectionPlaneAlphaDoubleSpinBox">
+            <widget class="QDoubleSpinBox" name="segmentationMeshAlphaDoubleSpinBox">
              <property name="decimals">
               <number>3</number>
              </property>

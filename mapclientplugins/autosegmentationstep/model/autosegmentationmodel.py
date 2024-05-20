@@ -275,6 +275,11 @@ class AutoSegmentationModel(object):
         node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
         node_set.destroyAllNodes()
 
+    def reverse_visibility_field_direction(self):
+        normal = self._detection_plane.getNormal()
+        reverse_normal = [-component for component in normal]
+        self._detection_plane.setNormal(reverse_normal)
+
     def _calculate_histo_data(self):
         self._field_module.beginChange()
         field_cache = self._field_module.createFieldcache()
