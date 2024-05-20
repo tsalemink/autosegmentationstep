@@ -96,6 +96,11 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_segmentation_visibility(not checked)
         self._scene.set_point_cloud_visibility(not checked)
 
+        # Enable/disable relevant UI elements.
+        self._ui.segmentationCheckBox.setEnabled(not checked)
+        self._ui.pointCloudCheckBox.setEnabled(not checked)
+        self._ui.generatePointsButton.setEnabled(not checked)
+
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
 
