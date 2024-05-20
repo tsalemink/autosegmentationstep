@@ -3,13 +3,17 @@ Created: April, 2023
 
 @author: tsalemink
 """
-import os.path
 
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field, FieldImage
 
-from cmlibs.utils.zinc.finiteelement import create_cube_element
-from cmlibs.utils.zinc.field import create_field_coordinates
+from cmlibs.utils.zinc.finiteelement import create_cube_element, create_square_element
+from cmlibs.utils.zinc.field import create_field_coordinates, create_field_visibility_for_plane
+from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.utils.geometry.plane import ZincPlane
+
+from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_angle_to_rotation_matrix
+from cmlibs.maths.algorithms import calculate_centroid
 
 
 class AutoSegmentationModel(object):
@@ -17,8 +21,12 @@ class AutoSegmentationModel(object):
         self._context = Context('Auto-Segmentation')
 
         self._root_region = self._context.getDefaultRegion()
+        self._mesh_region = self._root_region.createChild("segmentation_mesh")
+        self._detection_region = self._root_region.createChild('detection')
         self._output_region = self._root_region.createChild('output')
         self._root_scene = self._root_region.getScene()
+        self._mesh_scene = self._mesh_region.getScene()
+        self._detection_scene = self._detection_region.getScene()
         self._output_scene = self._output_region.getScene()
         self._field_module = self._root_region.getFieldmodule()
 
@@ -35,6 +43,12 @@ class AutoSegmentationModel(object):
         self._output_coordinates, self._node_set = self._setup_output_region()
         self._histogram = self._calculate_histo_data()
 
+        self._detection_coordinates = self._setup_detection_region()
+        self._mesh_coordinates = self._setup_mesh_region()
+
+        self._detection_plane = self._create_detection_plane()
+        self._visibility_field = self._create_visibility_field()
+
         self._define_standard_glyphs()
         self._point_cloud_material = None
         self._contour_material = None
@@ -46,6 +60,12 @@ class AutoSegmentationModel(object):
     def get_root_region(self):
         return self._root_region
 
+    def get_mesh_region(self):
+        return self._mesh_region
+
+    def get_detection_region(self):
+        return self._detection_region
+
     def get_output_region(self):
         return self._output_region
 
@@ -54,6 +74,12 @@ class AutoSegmentationModel(object):
 
     def get_root_scene(self):
         return self._root_scene
+
+    def get_mesh_scene(self):
+        return self._mesh_scene
+
+    def get_detection_scene(self):
+        return self._detection_scene
 
     def get_output_scene(self):
         return self._output_scene
@@ -80,8 +106,20 @@ class AutoSegmentationModel(object):
     def get_output_coordinates(self):
         return self._output_coordinates
 
+    def get_mesh_coordinates(self):
+        return self._mesh_coordinates
+
+    def get_detection_coordinates(self):
+        return self._detection_coordinates
+
     def get_node_set(self):
         return self._node_set
+
+    def get_detection_plane(self):
+        return self._detection_plane
+
+    def get_visibility_field(self):
+        return self._visibility_field
 
     def get_point_cloud_material(self):
         return self._point_cloud_material
@@ -172,6 +210,60 @@ class AutoSegmentationModel(object):
         node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
 
         return output_coordinates, node_set
+
+    def _setup_detection_region(self):
+        field_module = self._detection_region.getFieldmodule()
+        detection_coordinates = create_field_coordinates(field_module, managed=True)
+
+        return detection_coordinates
+
+    def _setup_mesh_region(self):
+        field_module = self._mesh_region.getFieldmodule()
+        mesh_coordinates = create_field_coordinates(field_module, managed=True)
+
+        return mesh_coordinates
+
+    # TODO: Update this so that it is compatible with the Orientation and Translation handlers.
+    def _create_detection_plane(self):
+        node_coordinate_set = self._define_node_positions()
+        point_on_plane = calculate_centroid(node_coordinate_set)
+        plane_normal = [1.0, 0.0, 0.0]
+
+        field_module = self._mesh_region.getFieldmodule()
+        plane = ZincPlane(field_module)
+        plane.setPlaneEquation(plane_normal, point_on_plane)
+
+        max_dimension = max(self._dimensions_px)
+        half_max_dimension = max_dimension / 2
+        p_h_m_d = half_max_dimension
+        n_h_m_d = -half_max_dimension
+        element_points = [[n_h_m_d, n_h_m_d, 0], [p_h_m_d, n_h_m_d, 0], [n_h_m_d, p_h_m_d, 0], [p_h_m_d, p_h_m_d, 0]]
+        element_normal = [0, 0, 1.0]
+
+        theta = angle(plane_normal, element_normal)
+        rot_mx = axis_angle_to_rotation_matrix(cross(element_normal, plane_normal), theta)
+        rot_element_points = [add(matrix_vector_mult(rot_mx, pt), point_on_plane) for pt in element_points]
+
+        field_module = self._detection_region.getFieldmodule()
+        with ChangeManager(field_module):
+            mesh = field_module.findMeshByDimension(2)
+            create_square_element(mesh, self._detection_coordinates, rot_element_points)
+
+        return plane
+
+    def _create_visibility_field(self):
+        field_module = self._mesh_region.getFieldmodule()
+        coordinate_field = field_module.findFieldByName('coordinates')
+        visibility_field = create_field_visibility_for_plane(field_module, coordinate_field, self._detection_plane)
+
+        return visibility_field
+
+    def clear_segmentation_mesh(self):
+        field_module = self._mesh_region.getFieldmodule()
+        mesh = field_module.findMeshByDimension(2)
+        mesh.destroyAllElements()
+        node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+        node_set.destroyAllNodes()
 
     def _calculate_histo_data(self):
         self._field_module.beginChange()

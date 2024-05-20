@@ -13,6 +13,8 @@ class AutoSegmentationScene(object):
         self._model = model
         self._context = model.get_context()
         self._root_scene = model.get_root_scene()
+        self._mesh_scene = model.get_mesh_scene()
+        self._detection_scene = model.get_detection_scene()
         self._output_scene = model.get_output_scene()
         self._dimensions = model.get_dimensions()
         self._output_coordinates = model.get_output_coordinates()
@@ -27,6 +29,8 @@ class AutoSegmentationScene(object):
         self._segmentation_contour.setMaterial(self._segmentation_contour_material)
         self._point_cloud = self._create_point_cloud_graphics()
         self._point_cloud.setMaterial(model.get_point_cloud_material())
+        self._segmentation_mesh = self._create_mesh_graphics()
+        self._detection_plane = self._create_detection_plane()
 
     def _create_outline_graphics(self):
         field_module = self._model.get_field_module()
@@ -96,6 +100,38 @@ class AutoSegmentationScene(object):
 
         return point_cloud
 
+    def _create_mesh_graphics(self):
+        mesh_coordinates = self._model.get_mesh_coordinates()
+
+        material_module = self._mesh_scene.getMaterialmodule()
+        green = material_module.findMaterialByName("blue")
+
+        self._mesh_scene.beginChange()
+        segmentation_mesh = self._mesh_scene.createGraphicsSurfaces()
+        segmentation_mesh.setCoordinateField(mesh_coordinates)
+        segmentation_mesh.setMaterial(green)
+        segmentation_mesh.setVisibilityFlag(True)
+        visibility_field = self._model.get_visibility_field()
+        segmentation_mesh.setSubgroupField(visibility_field)
+        self._mesh_scene.endChange()
+
+        return segmentation_mesh
+
+    def _create_detection_plane(self):
+        coordinate_field = self._model.get_detection_coordinates()
+
+        material_module = self._detection_scene.getMaterialmodule()
+        green = material_module.findMaterialByName("green")
+
+        self._detection_scene.beginChange()
+        detection_plane = self._detection_scene.createGraphicsSurfaces()
+        detection_plane.setCoordinateField(coordinate_field)
+        detection_plane.setMaterial(green)
+        detection_plane.setVisibilityFlag(False)
+        self._detection_scene.endChange()
+
+        return detection_plane
+
     def set_point_size(self, value):
         attributes = self._point_cloud.getGraphicspointattributes()
         attributes.setBaseSize(value)
@@ -114,6 +150,12 @@ class AutoSegmentationScene(object):
 
     def set_point_cloud_visibility(self, state):
         self._point_cloud.setVisibilityFlag(state != 0)
+
+    def set_mesh_visibility(self, state):
+        self._segmentation_mesh.setVisibilityFlag(state != 0)
+
+    def set_detection_plane_visibility(self, state):
+        self._detection_plane.setVisibilityFlag(state != 0)
 
     def set_slider_value(self, value):
         z_scale = self._model.get_scale()[2]

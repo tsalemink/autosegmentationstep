@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'autosegmentationwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.2
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -17,8 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QFormLayout,
     QGroupBox, QHBoxLayout, QLabel, QLayout,
-    QLineEdit, QPushButton, QSizePolicy, QSlider,
-    QSpacerItem, QVBoxLayout, QWidget)
+    QLineEdit, QPushButton, QRadioButton, QSizePolicy,
+    QSlider, QSpacerItem, QVBoxLayout, QWidget)
 
 from mapclientplugins.autosegmentationstep.widgets.zincautosegmentationwidget import ZincAutoSegmentationWidget
 
@@ -26,7 +26,7 @@ class Ui_AutoSegmentationWidget(object):
     def setupUi(self, AutoSegmentationWidget):
         if not AutoSegmentationWidget.objectName():
             AutoSegmentationWidget.setObjectName(u"AutoSegmentationWidget")
-        AutoSegmentationWidget.resize(820, 646)
+        AutoSegmentationWidget.resize(820, 659)
         self.verticalLayout = QVBoxLayout(AutoSegmentationWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.groupBox = QGroupBox(AutoSegmentationWidget)
@@ -243,6 +243,37 @@ class Ui_AutoSegmentationWidget(object):
 
         self.verticalLayout_3.addWidget(self.groupBoxVisibility)
 
+        self.groupBoxDetectionPlane = QGroupBox(self.groupBox)
+        self.groupBoxDetectionPlane.setObjectName(u"groupBoxDetectionPlane")
+        self.horizontalLayout_4 = QHBoxLayout(self.groupBoxDetectionPlane)
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.radioButtonToggleDetection = QRadioButton(self.groupBoxDetectionPlane)
+        self.radioButtonToggleDetection.setObjectName(u"radioButtonToggleDetection")
+
+        self.horizontalLayout_4.addWidget(self.radioButtonToggleDetection)
+
+        self.label_9 = QLabel(self.groupBoxDetectionPlane)
+        self.label_9.setObjectName(u"label_9")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.label_9.sizePolicy().hasHeightForWidth())
+        self.label_9.setSizePolicy(sizePolicy3)
+
+        self.horizontalLayout_4.addWidget(self.label_9)
+
+        self.detectionPlaneAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBoxDetectionPlane)
+        self.detectionPlaneAlphaDoubleSpinBox.setObjectName(u"detectionPlaneAlphaDoubleSpinBox")
+        self.detectionPlaneAlphaDoubleSpinBox.setDecimals(3)
+        self.detectionPlaneAlphaDoubleSpinBox.setMaximum(1.000000000000000)
+        self.detectionPlaneAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
+        self.detectionPlaneAlphaDoubleSpinBox.setValue(0.400000000000000)
+
+        self.horizontalLayout_4.addWidget(self.detectionPlaneAlphaDoubleSpinBox)
+
+
+        self.verticalLayout_3.addWidget(self.groupBoxDetectionPlane)
+
 
         self.horizontalLayout_3.addLayout(self.verticalLayout_3)
 
@@ -252,11 +283,11 @@ class Ui_AutoSegmentationWidget(object):
 
         self.zincWidget = ZincAutoSegmentationWidget(self.groupBox)
         self.zincWidget.setObjectName(u"zincWidget")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sizePolicy3.setHorizontalStretch(1)
-        sizePolicy3.setVerticalStretch(1)
-        sizePolicy3.setHeightForWidth(self.zincWidget.sizePolicy().hasHeightForWidth())
-        self.zincWidget.setSizePolicy(sizePolicy3)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy4.setHorizontalStretch(1)
+        sizePolicy4.setVerticalStretch(1)
+        sizePolicy4.setHeightForWidth(self.zincWidget.sizePolicy().hasHeightForWidth())
+        self.zincWidget.setSizePolicy(sizePolicy4)
 
         self.horizontalLayout_3.addWidget(self.zincWidget)
 
@@ -318,6 +349,9 @@ class Ui_AutoSegmentationWidget(object):
         self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
         self.pointCloudCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Cloud", None))
         self.outlineCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Outline", None))
+        self.groupBoxDetectionPlane.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Detection Mode", None))
+        self.radioButtonToggleDetection.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Toggle On", None))
+        self.label_9.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Plane Alpha:", None))
         self.generatePointsButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Generate Points", None))
         self.histogramPushButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Show Histogram", None))
         self.doneButton.setText(QCoreApplication.translate("AutoSegmentationWidget", u"&Done", None))
