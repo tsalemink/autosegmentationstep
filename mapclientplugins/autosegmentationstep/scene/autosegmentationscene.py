@@ -30,7 +30,11 @@ class AutoSegmentationScene(object):
         self._point_cloud = self._create_point_cloud_graphics()
         self._point_cloud.setMaterial(model.get_point_cloud_material())
         self._segmentation_mesh = self._create_mesh_graphics()
+        self._segmentation_mesh_material = model.get_mesh_material()
+        self._segmentation_mesh.setMaterial(self._segmentation_mesh_material)
         self._detection_plane = self._create_detection_plane()
+        self._detection_plane_material = model.get_plane_material()
+        self._detection_plane.setMaterial(self._detection_plane_material)
 
     def _create_outline_graphics(self):
         field_module = self._model.get_field_module()
@@ -138,6 +142,12 @@ class AutoSegmentationScene(object):
 
     def set_contour_alpha(self, value):
         self._segmentation_contour_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
+
+    def set_mesh_alpha(self, value):
+        self._segmentation_mesh_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
+
+    def set_plane_alpha(self, value):
+        self._detection_plane_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
 
     def set_outline_visibility(self, state):
         self._outline_graphics.setVisibilityFlag(state != 0)

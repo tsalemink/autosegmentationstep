@@ -52,6 +52,8 @@ class AutoSegmentationModel(object):
         self._define_standard_glyphs()
         self._point_cloud_material = None
         self._contour_material = None
+        self._mesh_material = None
+        self._plane_material = None
         self._define_materials()
 
     def get_context(self):
@@ -127,6 +129,12 @@ class AutoSegmentationModel(object):
     def get_contour_material(self):
         return self._contour_material
 
+    def get_mesh_material(self):
+        return self._mesh_material
+
+    def get_plane_material(self):
+        return self._plane_material
+
     def _define_standard_glyphs(self):
         glyph_module = self._context.getGlyphmodule()
         glyph_module.defineStandardGlyphs()
@@ -136,6 +144,8 @@ class AutoSegmentationModel(object):
         material_module.defineStandardMaterials()
         self._point_cloud_material = material_module.findMaterialByName("yellow")
         self._contour_material = material_module.findMaterialByName("white")
+        self._mesh_material = material_module.findMaterialByName("blue")
+        self._plane_material = material_module.findMaterialByName("green")
 
     def _create_finite_elements(self):
         self._field_module.beginChange()

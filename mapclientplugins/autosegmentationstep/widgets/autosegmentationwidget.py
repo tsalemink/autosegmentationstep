@@ -79,6 +79,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.generatePointsButton.clicked.connect(self._generate_points)
         self._ui.histogramPushButton.clicked.connect(self._histogram_clicked)
         self._ui.radioButtonToggleDetection.toggled.connect(self._toggle_detection_mode)
+        self._ui.segmentationMeshAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_mesh_alpha)
+        self._ui.detectionPlaneAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.doneButton.clicked.connect(self._done_execution)
 
     def register_done_execution(self, done_execution):
@@ -192,6 +194,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.allowHighTessellationsCheckBox.setChecked(settings.get("tessellation-override", False))
         self._ui.overrideScalingCheckBox.setChecked(settings.get("scaling-override", False))
         self._ui.scalingLineEdit.setText(settings.get("scaling", "1, 1, 1"))
+        self._ui.segmentationMeshAlphaDoubleSpinBox.setValue(settings.get("mesh-alpha", 1.0))
+        self._ui.detectionPlaneAlphaDoubleSpinBox.setValue(settings.get("plane-alpha", 1.0))
 
         dimensions = self._model.get_dimensions()
         min_dim = min(dimensions)
@@ -228,6 +232,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             "scaling": self._ui.scalingLineEdit.text(),
             "point-density": self._ui.pointDensityLineEdit.text(),
             "point-size": self._ui.pointSizeLineEdit.text(),
+            "mesh-alpha": self._ui.segmentationMeshAlphaDoubleSpinBox.value(),
+            "plane-alpha": self._ui.detectionPlaneAlphaDoubleSpinBox.value(),
         }
 
         with open(self._settings_file(), "w") as f:
