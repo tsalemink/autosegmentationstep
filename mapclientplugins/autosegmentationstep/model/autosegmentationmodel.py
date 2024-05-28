@@ -9,6 +9,7 @@ from cmlibs.zinc.field import Field, FieldImage
 
 from cmlibs.utils.zinc.finiteelement import create_cube_element, create_square_element
 from cmlibs.utils.zinc.field import create_field_coordinates, create_field_visibility_for_plane
+from cmlibs.utils.zinc.node import get_field_values
 from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.utils.geometry.plane import ZincPlane
 
@@ -233,7 +234,6 @@ class AutoSegmentationModel(object):
 
         return mesh_coordinates
 
-    # TODO: Update this so that it is compatible with the Orientation and Translation handlers.
     def _create_detection_plane(self):
         node_coordinate_set = self._define_node_positions()
         point_on_plane = calculate_centroid(node_coordinate_set)
@@ -280,6 +280,12 @@ class AutoSegmentationModel(object):
         reverse_normal = [-component for component in normal]
         self._detection_plane.setNormal(reverse_normal)
 
+    def plane_nodes_coordinates(self):
+        field_module = self._detection_region.getFieldmodule()
+        coordinate_field_name = self._detection_coordinates.getName()
+        coordinate_field = field_module.findFieldByName(coordinate_field_name).castFiniteElement()
+        return get_field_values(self._detection_region, coordinate_field)
+
     def _calculate_histo_data(self):
         self._field_module.beginChange()
         field_cache = self._field_module.createFieldcache()
@@ -315,3 +321,7 @@ class AutoSegmentationModel(object):
 
     def get_output_filename(self):
         return self._output_filename
+
+    # Map methods required for Orientation and Translation handlers.
+    get_plane = get_detection_plane
+    get_plane_region = get_detection_region

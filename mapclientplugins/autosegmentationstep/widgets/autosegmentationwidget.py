@@ -16,6 +16,8 @@ from cmlibs.exporter.webgl import ArgonSceneExporter
 from cmlibs.importer.webgl import import_data_into_region
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
+from cmlibs.widgets.handlers.orientation import Orientation
+from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
 from mapclientplugins.autosegmentationstep.scene.autosegmentationscene import AutoSegmentationScene
@@ -55,6 +57,14 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._view.set_context(self._model.get_context())
         self._view.register_handler(SceneManipulation())
 
+        orientation_handler = Orientation(QtCore.Qt.Key.Key_O)
+        orientation_handler.set_model(self._model)
+        self._view.register_handler(orientation_handler)
+
+        normal_handler = FixedAxisTranslation(QtCore.Qt.Key.Key_T)
+        normal_handler.set_model(self._model)
+        self._view.register_handler(normal_handler)
+
         self._setup_tessellation_line_edit()
         self._set_scale_validator()
         display_dimensions = ", ".join([f"{d}" for d in self._model.get_dimensions()])
@@ -87,6 +97,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
     def register_done_execution(self, done_execution):
         self._callback = done_execution
 
+    # TODO: Check if segmentation threshold has actually changed or if we can just show the same mesh.
     def _toggle_detection_mode(self, checked):
         if checked:
             self._model.clear_segmentation_mesh()
