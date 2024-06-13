@@ -16,6 +16,8 @@ from cmlibs.exporter.webgl import ArgonSceneExporter
 from cmlibs.importer.webgl import import_data_into_region
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
+from cmlibs.widgets.handlers.orientation import Orientation
+from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
 from mapclientplugins.autosegmentationstep.scene.autosegmentationscene import AutoSegmentationScene
@@ -55,6 +57,14 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._view.set_context(self._model.get_context())
         self._view.register_handler(SceneManipulation())
 
+        orientation_handler = Orientation(QtCore.Qt.Key.Key_O)
+        orientation_handler.set_model(self._model)
+        self._view.register_handler(orientation_handler)
+
+        normal_handler = FixedAxisTranslation(QtCore.Qt.Key.Key_T)
+        normal_handler.set_model(self._model)
+        self._view.register_handler(normal_handler)
+
         self._setup_tessellation_line_edit()
         self._set_scale_validator()
         display_dimensions = ", ".join([f"{d}" for d in self._model.get_dimensions()])
@@ -78,10 +88,30 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_contour_alpha)
         self._ui.generatePointsButton.clicked.connect(self._generate_points)
         self._ui.histogramPushButton.clicked.connect(self._histogram_clicked)
+        self._ui.checkBoxToggleDetection.stateChanged.connect(self._toggle_detection_mode)
+        self._ui.checkBoxReverseField.stateChanged.connect(self._model.reverse_visibility_field_direction)
+        self._ui.segmentationMeshAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_mesh_alpha)
+        self._ui.detectionPlaneAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.doneButton.clicked.connect(self._done_execution)
 
     def register_done_execution(self, done_execution):
         self._callback = done_execution
+
+    # TODO: Check if segmentation threshold has actually changed or if we can just show the same mesh.
+    def _toggle_detection_mode(self, checked):
+        if checked:
+            self._model.clear_segmentation_mesh()
+            self._transform_contours_to_mesh()
+            self._generate_segmentation_mesh(self._model.get_mesh_coordinates())
+        self._scene.set_mesh_visibility(checked)
+        self._scene.set_detection_plane_visibility(checked)
+        self._scene.set_segmentation_visibility(not checked)
+        self._scene.set_point_cloud_visibility(not checked)
+
+        # Enable/disable relevant UI elements.
+        self._ui.segmentationCheckBox.setEnabled(not checked)
+        self._ui.pointCloudCheckBox.setEnabled(not checked)
+        self._ui.generatePointsButton.setEnabled(not checked)
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
@@ -93,23 +123,26 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._model.get_output_region().writeFile(self.get_output_filename())
 
     def _transform_webgl_to_exf(self):
+        root_region = self._model.get_root_region()
+        temp_region = root_region.createChild("__temp")
+        field_module = temp_region.getFieldmodule()
+        coordinate_field = create_field_coordinates(field_module)
+
+        self._generate_segmentation_mesh(coordinate_field)
+
+        temp_region.writeFile(self.get_segmentation_graphics_filename())
+        root_region.removeChild(temp_region)
+
+    def _generate_segmentation_mesh(self, coordinate_field):
         inputs = os.path.join(self._location, "ArgonSceneExporterWebGL_1.json")
         if not os.path.exists(inputs):
             return
 
-        root_region = self._model.get_root_region()
-        temp_region = root_region.createChild("__temp")
-
-        field_module = temp_region.getFieldmodule()
-        coordinate_field = create_field_coordinates(field_module)
-
+        region = coordinate_field.getFieldmodule().getRegion()
         coordinate_field_name = coordinate_field.getName()
-        import_data_into_region(temp_region, inputs, coordinate_field_name)
-
-        temp_region.writeFile(self.get_segmentation_graphics_filename())
+        import_data_into_region(region, inputs, coordinate_field_name)
 
         # Delete the WebGL JSON files.
-        root_region.removeChild(temp_region)
         os.remove(inputs)
         os.remove(os.path.join(self._location, "ArgonSceneExporterWebGL_metadata.json"))
 
@@ -117,6 +150,10 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
+        self._transform_contours_to_mesh()
+        self._transform_webgl_to_exf()
+
+    def _transform_contours_to_mesh(self):
         # Export the scene into a WebGL JSON file.
         self._hide_graphics()
         scene = self._model.get_root_scene()
@@ -124,7 +161,6 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         scene_exporter = ArgonSceneExporter(self._location)
         scene_exporter.export_webgl_from_scene(scene, scene_filter)
         self._reinstate_graphics()
-        self._transform_webgl_to_exf()
 
     def _generate_input_hash(self):
         normalised_file_paths = [pathlib.PureWindowsPath(os.path.relpath(file_path, self._location)).as_posix()
@@ -135,12 +171,16 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_outline_visibility(0)
         self._scene.set_image_plane_visibility(0)
         self._scene.set_point_cloud_visibility(0)
+        self._scene.set_detection_plane_visibility(0)
+        self._scene.set_mesh_visibility(0)
 
     def _reinstate_graphics(self):
         self._scene.set_outline_visibility(1 if self._ui.outlineCheckBox.isChecked() else 0)
         self._scene.set_segmentation_visibility(1 if self._ui.segmentationCheckBox.isChecked() else 0)
         self._scene.set_image_plane_visibility(1 if self._ui.imagePlaneCheckBox.isChecked() else 0)
         self._scene.set_point_cloud_visibility(1 if self._ui.pointCloudCheckBox.isChecked() else 0)
+        self._scene.set_detection_plane_visibility(1 if self._ui.checkBoxToggleDetection.isChecked() else 0)
+        self._scene.set_mesh_visibility(1 if self._ui.checkBoxToggleDetection.isChecked() else 0)
 
     def _done_execution(self):
         self._save_settings()
@@ -171,6 +211,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.allowHighTessellationsCheckBox.setChecked(settings.get("tessellation-override", False))
         self._ui.overrideScalingCheckBox.setChecked(settings.get("scaling-override", False))
         self._ui.scalingLineEdit.setText(settings.get("scaling", "1, 1, 1"))
+        self._ui.segmentationMeshAlphaDoubleSpinBox.setValue(settings.get("mesh-alpha", 1.0))
+        self._ui.detectionPlaneAlphaDoubleSpinBox.setValue(settings.get("plane-alpha", 1.0))
 
         dimensions = self._model.get_dimensions()
         min_dim = min(dimensions)
@@ -207,6 +249,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             "scaling": self._ui.scalingLineEdit.text(),
             "point-density": self._ui.pointDensityLineEdit.text(),
             "point-size": self._ui.pointSizeLineEdit.text(),
+            "mesh-alpha": self._ui.segmentationMeshAlphaDoubleSpinBox.value(),
+            "plane-alpha": self._ui.detectionPlaneAlphaDoubleSpinBox.value(),
         }
 
         with open(self._settings_file(), "w") as f:
