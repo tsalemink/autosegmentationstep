@@ -7,17 +7,20 @@ import os
 import json
 import pathlib
 import hashlib
+import time
 
 # import matplotlib.pyplot as plt
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
-from cmlibs.exporter.webgl import ArgonSceneExporter
-from cmlibs.importer.webgl import import_data_into_region
+from cmlibs.exporter.stl import ArgonSceneExporter as STLExporter
+from cmlibs.importer.stl import import_data_into_region as stl_import_data_into_region
 from cmlibs.utils.zinc.field import create_field_coordinates
+from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.orientation import Orientation
 from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
+from cmlibs.zinc.field import FieldGroup
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
 from mapclientplugins.autosegmentationstep.scene.autosegmentationscene import AutoSegmentationScene
@@ -31,6 +34,175 @@ def _set_double_validator(editor):
 def _set_vector_validator(editor, regex):
     validator = QtGui.QRegularExpressionValidator(regex)
     editor.setValidator(validator)
+
+
+def _get_element_identifiers(mesh):
+    element_iterator = mesh.createElementiterator()
+    element = element_iterator.next()
+    element_identifiers = []
+    while element.isValid():
+        element_identifiers.append(element.getIdentifier())
+        element = element_iterator.next()
+
+    return element_identifiers
+
+
+def _calculate_connected_elements(mesh, seed_element_identifier):
+    field_module = mesh.getFieldmodule()
+    element = mesh.findElementByIdentifier(seed_element_identifier)
+
+    with ChangeManager(field_module):
+        field_group = field_module.createFieldGroup()
+        field_group.setName('the_group')
+        field_group.setSubelementHandlingMode(FieldGroup.SUBELEMENT_HANDLING_MODE_FULL)
+        mesh_group = field_group.createMeshGroup(mesh)
+
+        old_size = mesh_group.getSize()
+        mesh_group.addElement(element)
+        new_size = mesh_group.getSize()
+
+        while new_size > old_size:
+            old_size = new_size
+            mesh_group.addAdjacentElements(1)
+            new_size = mesh_group.getSize()
+
+        element_identifiers = _get_element_identifiers(mesh_group)
+
+        del mesh_group
+        del field_group
+
+    return element_identifiers
+
+
+def _transform_mesh_to_list_form(mesh, mesh_field):
+    """
+    Transform a mesh to a list of element identifiers and a list of node identifiers.
+
+    :param mesh: The mesh to transform.
+    :param mesh_field: A field defined over the elements in the mesh.
+    :return: A list of element identifiers, a list of lists of node identifiers.
+    """
+    element_iterator = mesh.createElementiterator()
+    element = element_iterator.next()
+    element_nodes = []
+    element_identifiers = []
+    while element.isValid():
+        eft = element.getElementfieldtemplate(mesh_field, -1)
+        local_node_count = eft.getNumberOfLocalNodes()
+        node_identifiers = []
+        for index in range(local_node_count):
+            node = element.getNode(eft, index + 1)
+            node_identifiers.append(node.getIdentifier())
+
+        element_identifiers.append(element.getIdentifier())
+        element_nodes.append(node_identifiers)
+
+        element = element_iterator.next()
+
+    return element_identifiers, element_nodes
+
+
+def _find_and_remove_repeated_elements(element_identifiers, element_nodes, mesh):
+    repeats = _find_duplicates(element_nodes)
+    for repeat in repeats:
+        repeated_element = mesh.findElementByIdentifier(element_identifiers[repeat])
+        mesh.destroyElement(repeated_element)
+        del element_identifiers[repeat]
+        del element_nodes[repeat]
+
+
+def _find_connected_mesh_elements_0d(mesh_coordinate_field):
+    field_module = mesh_coordinate_field.getFieldmodule()
+
+    mesh = field_module.findMeshByDimension(2)
+    element_identifiers, element_nodes = _transform_mesh_to_list_form(mesh, mesh_coordinate_field)
+    _find_and_remove_repeated_elements(element_identifiers, element_nodes, mesh)
+
+    initial_element_index = 0
+    connected_sets = _find_connected(initial_element_index, element_nodes)
+    if connected_sets is None:
+        return
+
+    el_ids = []
+    for connected_set in connected_sets:
+        el_ids.append([element_identifiers[index] for index in connected_set])
+
+    return el_ids
+
+
+def _find_connected_mesh_elements_1d(mesh_coordinate_field):
+    field_module = mesh_coordinate_field.getFieldmodule()
+
+    mesh = field_module.findMeshByDimension(2)
+    element_identifiers, element_nodes = _transform_mesh_to_list_form(mesh, mesh_coordinate_field)
+    _find_and_remove_repeated_elements(element_identifiers, element_nodes, mesh)
+    field_module.defineAllFaces()
+    remainder_element_identifiers = element_identifiers[:]
+
+    connected_sets = []
+    while len(remainder_element_identifiers):
+        connected_element_identifiers = _calculate_connected_elements(mesh, remainder_element_identifiers.pop(0))
+        connected_sets.append(connected_element_identifiers)
+        remainder_element_identifiers = list(set(remainder_element_identifiers) - set(connected_element_identifiers))
+
+    return connected_sets
+
+
+def _find_connected(seed_index, element_nodes):
+    connected_elements = [[seed_index]]
+    connected_nodes = [set(element_nodes[seed_index])]
+    for element_index, element in enumerate(element_nodes):
+        if element_index == seed_index:
+            continue
+
+        connected_elements.append([element_index])
+        connected_nodes.append(set(element_nodes[element_index]))
+
+        index = 0
+        while index < len(connected_elements):
+            connection_found = False
+            next_index = index + 1
+            base_connected_node_set = connected_nodes[index]
+            while next_index < len(connected_elements):
+                current_connected_node_set = connected_nodes[next_index]
+                intersection = base_connected_node_set.intersection(current_connected_node_set)
+                if len(intersection):
+                    connection_found = True
+                    connected_elements[index].extend(connected_elements[next_index])
+                    connected_nodes[index].update(connected_nodes[next_index])
+                    del connected_elements[next_index]
+                    del connected_nodes[next_index]
+                    index = 0
+                    # next_index = 0
+                else:
+                    next_index += 1
+
+            if not connection_found:
+                index += 1
+
+    return connected_elements
+
+
+def _find_duplicates(element_nodes):
+    """
+    Given a list of integers, returns a list of all duplicate elements (with multiple duplicities).
+    """
+    num_count = {}
+    duplicates = []
+
+    for index, nodes in enumerate(element_nodes):
+        sorted_nodes = tuple(sorted(nodes))
+        if sorted_nodes in num_count:
+            num_count[sorted_nodes].append(index)
+        else:
+            num_count[sorted_nodes] = [index]
+
+    # Add duplicates to the result list
+    for num, count in num_count.items():
+        if len(count) > 1:
+            duplicates.extend(count[1:])
+
+    return sorted(duplicates, reverse=True)
 
 
 class AutoSegmentationWidget(QtWidgets.QWidget):
@@ -103,6 +275,8 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             self._model.clear_segmentation_mesh()
             self._transform_contours_to_mesh()
             self._generate_segmentation_mesh(self._model.get_mesh_coordinates())
+            connected_elements = _find_connected_mesh_elements_0d(self._model.get_mesh_coordinates())
+            # connected_elements = self._find_connected_mesh_elements_1d(self._model.get_mesh_coordinates())
         self._scene.set_mesh_visibility(checked)
         self._scene.set_detection_plane_visibility(checked)
         self._scene.set_segmentation_visibility(not checked)
@@ -122,7 +296,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
         self._model.get_output_region().writeFile(self.get_output_filename())
 
-    def _transform_webgl_to_exf(self):
+    def _transform_exported_mesh_to_exf(self):
         root_region = self._model.get_root_region()
         temp_region = root_region.createChild("__temp")
         field_module = temp_region.getFieldmodule()
@@ -134,32 +308,33 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         root_region.removeChild(temp_region)
 
     def _generate_segmentation_mesh(self, coordinate_field):
-        inputs = os.path.join(self._location, "ArgonSceneExporterWebGL_1.json")
-        if not os.path.exists(inputs):
+        inputs_stl = os.path.join(self._location, "ArgonSceneExporterSTL_zinc_graphics.stl")
+        if not os.path.exists(inputs_stl):
             return
 
         region = coordinate_field.getFieldmodule().getRegion()
-        coordinate_field_name = coordinate_field.getName()
-        import_data_into_region(region, inputs, coordinate_field_name)
+        stl_import_data_into_region(region, inputs_stl)
+
+        # output_exf = os.path.join(self._location, "mesh_of_stl.exf")
+        # region.writeFile(output_exf)
 
         # Delete the WebGL JSON files.
-        os.remove(inputs)
-        os.remove(os.path.join(self._location, "ArgonSceneExporterWebGL_metadata.json"))
+        os.remove(inputs_stl)
 
     def _export_segmentation_graphics(self):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
         self._transform_contours_to_mesh()
-        self._transform_webgl_to_exf()
+        self._transform_exported_mesh_to_exf()
 
     def _transform_contours_to_mesh(self):
-        # Export the scene into a WebGL JSON file.
+        # Export the scene into an STL file.
         self._hide_graphics()
         scene = self._model.get_root_scene()
         scene_filter = self._model.get_context().getScenefiltermodule().getDefaultScenefilter()
-        scene_exporter = ArgonSceneExporter(self._location)
-        scene_exporter.export_webgl_from_scene(scene, scene_filter)
+        alt_scene_exporter = STLExporter(self._location)
+        alt_scene_exporter.export_stl_from_scene(scene, scene_filter)
         self._reinstate_graphics()
 
     def _generate_input_hash(self):
