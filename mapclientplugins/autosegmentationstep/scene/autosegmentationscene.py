@@ -143,6 +143,15 @@ class AutoSegmentationScene(object):
     def set_contour_alpha(self, value):
         self._segmentation_contour_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
 
+    def set_mesh_group(self, group_field, combine):
+        visibility_field = self._model.get_visibility_field()
+        if combine:
+            field_module = visibility_field.getFieldmodule()
+            and_field = field_module.createFieldAnd(visibility_field, group_field)
+            self._segmentation_mesh.setSubgroupField(and_field)
+        else:
+            self._segmentation_mesh.setSubgroupField(visibility_field)
+
     def set_mesh_alpha(self, value):
         self._segmentation_mesh_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
 

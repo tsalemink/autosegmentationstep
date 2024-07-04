@@ -35,12 +35,6 @@ def _set_vector_validator(editor, regex):
     editor.setValidator(validator)
 
 
-def _connected_calculation_finished(future):
-    print("finished:", future.running(), future.done(), future.cancelled())
-    future.owner.connection_result(future.result())
-    print("called")
-
-
 class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def __init__(self, image_data, parent=None):
@@ -103,26 +97,54 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationMeshAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_mesh_alpha)
         self._ui.detectionPlaneAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.doneButton.clicked.connect(self._done_execution)
+        self._ui.comboBoxConnectedSurfaces.currentIndexChanged.connect(self._connected_subgroup_changed)
 
     def register_done_execution(self, done_execution):
         self._callback = done_execution
 
-    def connection_result(self, result):
-        print([len(r) for r in result])
+    def _create_mesh_field_group(self):
+        field = self._model.get_mesh_coordinates()
+        field_module = field.getFieldmodule()
+        return field_module.createFieldGroup()
+
+    def _update_connected_groups(self, result):
+        self._ui.comboBoxConnectedSurfaces.clear()
+        field = self._model.get_mesh_coordinates()
+        field_module = field.getFieldmodule()
+        mesh = field_module.findMeshByDimension(2)
+        self._ui.comboBoxConnectedSurfaces.addItem("--", field_module.createFieldGroup())
+        for i, r in enumerate(result):
+            field_group = field_module.createFieldGroup()
+            field_group.setName(f"el_group_{i + 1:02}")
+            mesh_group = field_group.createMeshGroup(mesh)
+            for e_id in r:
+                e = mesh.findElementByIdentifier(e_id)
+                mesh_group.addElement(e)
+            self._ui.comboBoxConnectedSurfaces.addItem(field_group.getName(), field_group)
+
+    def _connected_subgroup_changed(self, value):
+        group = self._ui.comboBoxConnectedSurfaces.currentData() if value >= 0 else self._create_mesh_field_group()
+        if group:
+            self._scene.set_mesh_group(group, value > 0)
 
     def _toggle_detection_mode(self, checked):
         if checked and not self._detection_current:
             self._detection_current = True
             if self._connected_future.running():
                 self._connected_future.cancel()
+            self._ui.comboBoxConnectedSurfaces.clear()
+            self._ui.comboBoxConnectedSurfaces.addItem("Pending")
+            self._ui.comboBoxConnectedSurfaces.setEnabled(False)
             self._model.clear_segmentation_mesh()
             self._transform_contours_to_mesh()
             self._generate_segmentation_mesh(self._model.get_mesh_coordinates())
-            with cf.ThreadPoolExecutor(max_workers=1) as tpe:
-                self._connected_future = tpe.submit(find_connected_mesh_elements_0d, self._model.get_mesh_coordinates(), 2, True)
-                self._connected_future.owner = self
-                self._connected_future.add_done_callback(_connected_calculation_finished)
-            # connected_elements = find_connected_mesh_elements_0d(self._model.get_mesh_coordinates(), 2, True)
+
+            # with cf.ThreadPoolExecutor(max_workers=1) as tpe:
+            #     self._connected_future = tpe.submit(find_connected_mesh_elements_0d, self._model.get_mesh_coordinates(), 2, True)
+            #     self._connected_future.owner = self
+            #     self._connected_future.add_done_callback(_connected_calculation_finished)
+            connected_elements = find_connected_mesh_elements_0d(self._model.get_mesh_coordinates(), 2, True)
+            self._update_connected_groups(connected_elements)
             # connected_elements = self._find_connected_mesh_elements_1d(self._model.get_mesh_coordinates())
         self._scene.set_mesh_visibility(checked)
         self._scene.set_detection_plane_visibility(checked)
@@ -133,6 +155,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.segmentationCheckBox.setEnabled(not checked)
         self._ui.pointCloudCheckBox.setEnabled(not checked)
         self._ui.generatePointsButton.setEnabled(not checked)
+        self._ui.comboBoxConnectedSurfaces.setEnabled(checked)
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
