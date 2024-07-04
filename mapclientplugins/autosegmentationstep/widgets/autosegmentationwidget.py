@@ -8,6 +8,7 @@ import json
 import pathlib
 import hashlib
 
+import concurrent.futures as cf
 # import matplotlib.pyplot as plt
 
 from PySide6 import QtWidgets, QtCore, QtGui
@@ -15,11 +16,10 @@ from PySide6 import QtWidgets, QtCore, QtGui
 from cmlibs.exporter.stl import ArgonSceneExporter as STLExporter
 from cmlibs.importer.stl import import_data_into_region as stl_import_data_into_region
 from cmlibs.utils.zinc.field import create_field_coordinates
-from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.utils.zinc.mesh import find_connected_mesh_elements_0d
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.orientation import Orientation
 from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
-from cmlibs.zinc.field import FieldGroup
 
 from mapclientplugins.autosegmentationstep.model.autosegmentationmodel import AutoSegmentationModel
 from mapclientplugins.autosegmentationstep.scene.autosegmentationscene import AutoSegmentationScene
@@ -35,173 +35,10 @@ def _set_vector_validator(editor, regex):
     editor.setValidator(validator)
 
 
-def _get_element_identifiers(mesh):
-    element_iterator = mesh.createElementiterator()
-    element = element_iterator.next()
-    element_identifiers = []
-    while element.isValid():
-        element_identifiers.append(element.getIdentifier())
-        element = element_iterator.next()
-
-    return element_identifiers
-
-
-def _calculate_connected_elements(mesh, seed_element_identifier):
-    field_module = mesh.getFieldmodule()
-    element = mesh.findElementByIdentifier(seed_element_identifier)
-
-    with ChangeManager(field_module):
-        field_group = field_module.createFieldGroup()
-        field_group.setName('the_group')
-        field_group.setSubelementHandlingMode(FieldGroup.SUBELEMENT_HANDLING_MODE_FULL)
-        mesh_group = field_group.createMeshGroup(mesh)
-
-        old_size = mesh_group.getSize()
-        mesh_group.addElement(element)
-        new_size = mesh_group.getSize()
-
-        while new_size > old_size:
-            old_size = new_size
-            mesh_group.addAdjacentElements(1)
-            new_size = mesh_group.getSize()
-
-        element_identifiers = _get_element_identifiers(mesh_group)
-
-        del mesh_group
-        del field_group
-
-    return element_identifiers
-
-
-def _transform_mesh_to_list_form(mesh, mesh_field):
-    """
-    Transform a mesh to a list of element identifiers and a list of node identifiers.
-
-    :param mesh: The mesh to transform.
-    :param mesh_field: A field defined over the elements in the mesh.
-    :return: A list of element identifiers, a list of lists of node identifiers.
-    """
-    element_iterator = mesh.createElementiterator()
-    element = element_iterator.next()
-    element_nodes = []
-    element_identifiers = []
-    while element.isValid():
-        eft = element.getElementfieldtemplate(mesh_field, -1)
-        local_node_count = eft.getNumberOfLocalNodes()
-        node_identifiers = []
-        for index in range(local_node_count):
-            node = element.getNode(eft, index + 1)
-            node_identifiers.append(node.getIdentifier())
-
-        element_identifiers.append(element.getIdentifier())
-        element_nodes.append(node_identifiers)
-
-        element = element_iterator.next()
-
-    return element_identifiers, element_nodes
-
-
-def _find_and_remove_repeated_elements(element_identifiers, element_nodes, mesh):
-    repeats = _find_duplicates(element_nodes)
-    for repeat in repeats:
-        repeated_element = mesh.findElementByIdentifier(element_identifiers[repeat])
-        mesh.destroyElement(repeated_element)
-        del element_identifiers[repeat]
-        del element_nodes[repeat]
-
-
-def _find_connected_mesh_elements_0d(mesh_coordinate_field):
-    field_module = mesh_coordinate_field.getFieldmodule()
-
-    mesh = field_module.findMeshByDimension(2)
-    element_identifiers, element_nodes = _transform_mesh_to_list_form(mesh, mesh_coordinate_field)
-    _find_and_remove_repeated_elements(element_identifiers, element_nodes, mesh)
-
-    initial_element_index = 0
-    connected_sets = _find_connected(initial_element_index, element_nodes)
-    if connected_sets is None:
-        return
-
-    el_ids = []
-    for connected_set in connected_sets:
-        el_ids.append([element_identifiers[index] for index in connected_set])
-
-    return el_ids
-
-
-def _find_connected_mesh_elements_1d(mesh_coordinate_field):
-    field_module = mesh_coordinate_field.getFieldmodule()
-
-    mesh = field_module.findMeshByDimension(2)
-    element_identifiers, element_nodes = _transform_mesh_to_list_form(mesh, mesh_coordinate_field)
-    _find_and_remove_repeated_elements(element_identifiers, element_nodes, mesh)
-    field_module.defineAllFaces()
-    remainder_element_identifiers = element_identifiers[:]
-
-    connected_sets = []
-    while len(remainder_element_identifiers):
-        connected_element_identifiers = _calculate_connected_elements(mesh, remainder_element_identifiers.pop(0))
-        connected_sets.append(connected_element_identifiers)
-        remainder_element_identifiers = list(set(remainder_element_identifiers) - set(connected_element_identifiers))
-
-    return connected_sets
-
-
-def _find_connected(seed_index, element_nodes):
-    connected_elements = [[seed_index]]
-    connected_nodes = [set(element_nodes[seed_index])]
-    for element_index, element in enumerate(element_nodes):
-        if element_index == seed_index:
-            continue
-
-        connected_elements.append([element_index])
-        connected_nodes.append(set(element_nodes[element_index]))
-
-        index = 0
-        while index < len(connected_elements):
-            connection_found = False
-            next_index = index + 1
-            base_connected_node_set = connected_nodes[index]
-            while next_index < len(connected_elements):
-                current_connected_node_set = connected_nodes[next_index]
-                intersection = base_connected_node_set.intersection(current_connected_node_set)
-                if len(intersection):
-                    connection_found = True
-                    connected_elements[index].extend(connected_elements[next_index])
-                    connected_nodes[index].update(connected_nodes[next_index])
-                    del connected_elements[next_index]
-                    del connected_nodes[next_index]
-                    index = 0
-                    # next_index = 0
-                else:
-                    next_index += 1
-
-            if not connection_found:
-                index += 1
-
-    return connected_elements
-
-
-def _find_duplicates(element_nodes):
-    """
-    Given a list of integers, returns a list of all duplicate elements (with multiple duplicities).
-    """
-    num_count = {}
-    duplicates = []
-
-    for index, nodes in enumerate(element_nodes):
-        sorted_nodes = tuple(sorted(nodes))
-        if sorted_nodes in num_count:
-            num_count[sorted_nodes].append(index)
-        else:
-            num_count[sorted_nodes] = [index]
-
-    # Add duplicates to the result list
-    for num, count in num_count.items():
-        if len(count) > 1:
-            duplicates.extend(count[1:])
-
-    return sorted(duplicates, reverse=True)
+def _connected_calculation_finished(future):
+    print("finished:", future.running(), future.done(), future.cancelled())
+    future.owner.connection_result(future.result())
+    print("called")
 
 
 class AutoSegmentationWidget(QtWidgets.QWidget):
@@ -216,6 +53,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._callback = None
         self._location = None
         self._input_hash = None
+        self._detection_current = False
 
         self._image_data = image_data
         self._model = AutoSegmentationModel(image_data)
@@ -242,6 +80,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.imagePixelOutputLabel.setText(f"{display_dimensions} px")
 
         self._make_connections()
+        self._connected_future = cf.Future()
 
     def _make_connections(self):
         self._ui.isoValueSlider.valueChanged.connect(self._scene.set_slider_value)
@@ -268,13 +107,22 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
     def register_done_execution(self, done_execution):
         self._callback = done_execution
 
-    # TODO: Check if segmentation threshold has actually changed or if we can just show the same mesh.
+    def connection_result(self, result):
+        print([len(r) for r in result])
+
     def _toggle_detection_mode(self, checked):
-        if checked:
+        if checked and not self._detection_current:
+            self._detection_current = True
+            if self._connected_future.running():
+                self._connected_future.cancel()
             self._model.clear_segmentation_mesh()
             self._transform_contours_to_mesh()
             self._generate_segmentation_mesh(self._model.get_mesh_coordinates())
-            connected_elements = _find_connected_mesh_elements_0d(self._model.get_mesh_coordinates())
+            with cf.ThreadPoolExecutor(max_workers=1) as tpe:
+                self._connected_future = tpe.submit(find_connected_mesh_elements_0d, self._model.get_mesh_coordinates(), 2, True)
+                self._connected_future.owner = self
+                self._connected_future.add_done_callback(_connected_calculation_finished)
+            # connected_elements = find_connected_mesh_elements_0d(self._model.get_mesh_coordinates(), 2, True)
             # connected_elements = self._find_connected_mesh_elements_1d(self._model.get_mesh_coordinates())
         self._scene.set_mesh_visibility(checked)
         self._scene.set_detection_plane_visibility(checked)
@@ -446,6 +294,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             self._ui.isoValueLineEdit.setText(f"{value * z_size * z_scale / 100.0}")
         elif self.sender() == self._ui.segmentationValueSlider:
             self._ui.segmentationValueLineEdit.setText(f"{value / 10000.0}")
+            self._detection_current = False
 
     def _setup_tessellation_line_edit(self):
         divisions = self._scene.get_tessellation_divisions()
