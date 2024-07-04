@@ -75,6 +75,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
         self._make_connections()
         self._connected_future = cf.Future()
+        self._ui.comboBoxConnectedSurfaces.setEnabled(self._ui.checkBoxToggleDetection.isChecked())
 
     def _make_connections(self):
         self._ui.isoValueSlider.valueChanged.connect(self._scene.set_slider_value)
