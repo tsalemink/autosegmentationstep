@@ -322,6 +322,11 @@ class AutoSegmentationModel(object):
     def get_output_filename(self):
         return self._output_filename
 
+    def print_messages(self):
+        logger = self._context.getLogger()
+        for i in range(1, logger.getNumberOfMessages() + 1):
+            print(f"{i} - {logger.getMessageTextAtIndex(i)}")
+
     # Map methods required for Orientation and Translation handlers.
     get_plane = get_detection_plane
     get_plane_region = get_detection_region

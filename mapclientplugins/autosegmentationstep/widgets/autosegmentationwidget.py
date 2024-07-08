@@ -8,7 +8,6 @@ import json
 import pathlib
 import hashlib
 
-import concurrent.futures as cf
 # import matplotlib.pyplot as plt
 
 from PySide6 import QtWidgets, QtCore, QtGui
@@ -16,6 +15,7 @@ from PySide6 import QtWidgets, QtCore, QtGui
 from cmlibs.exporter.stl import ArgonSceneExporter as STLExporter
 from cmlibs.importer.stl import import_data_into_region as stl_import_data_into_region
 from cmlibs.utils.zinc.field import create_field_coordinates
+from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.utils.zinc.mesh import find_connected_mesh_elements_0d
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.orientation import Orientation
@@ -74,7 +74,6 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.imagePixelOutputLabel.setText(f"{display_dimensions} px")
 
         self._make_connections()
-        self._connected_future = cf.Future()
         self._ui.comboBoxConnectedSurfaces.setEnabled(self._ui.checkBoxToggleDetection.isChecked())
 
     def _make_connections(self):
@@ -112,16 +111,17 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.comboBoxConnectedSurfaces.clear()
         field = self._model.get_mesh_coordinates()
         field_module = field.getFieldmodule()
-        mesh = field_module.findMeshByDimension(2)
-        self._ui.comboBoxConnectedSurfaces.addItem("--", field_module.createFieldGroup())
-        for i, r in enumerate(result):
-            field_group = field_module.createFieldGroup()
-            field_group.setName(f"el_group_{i + 1:02}")
-            mesh_group = field_group.createMeshGroup(mesh)
-            for e_id in r:
-                e = mesh.findElementByIdentifier(e_id)
-                mesh_group.addElement(e)
-            self._ui.comboBoxConnectedSurfaces.addItem(field_group.getName(), field_group)
+        with ChangeManager(field_module):
+            mesh = field_module.findMeshByDimension(2)
+            self._ui.comboBoxConnectedSurfaces.addItem("--", field_module.createFieldGroup())
+            for i, r in enumerate(result):
+                field_group = field_module.createFieldGroup()
+                field_group.setName(f"el_group_{i + 1:02}")
+                mesh_group = field_group.createMeshGroup(mesh)
+                for e_id in r:
+                    e = mesh.findElementByIdentifier(e_id)
+                    mesh_group.addElement(e)
+                self._ui.comboBoxConnectedSurfaces.addItem(field_group.getName(), field_group)
 
     def _connected_subgroup_changed(self, value):
         group = self._ui.comboBoxConnectedSurfaces.currentData() if value >= 0 else self._create_mesh_field_group()
@@ -131,8 +131,6 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
     def _toggle_detection_mode(self, checked):
         if checked and not self._detection_current:
             self._detection_current = True
-            if self._connected_future.running():
-                self._connected_future.cancel()
             self._ui.comboBoxConnectedSurfaces.clear()
             self._ui.comboBoxConnectedSurfaces.addItem("Pending")
             self._ui.comboBoxConnectedSurfaces.setEnabled(False)
@@ -140,13 +138,9 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             self._transform_contours_to_mesh()
             self._generate_segmentation_mesh(self._model.get_mesh_coordinates())
 
-            # with cf.ThreadPoolExecutor(max_workers=1) as tpe:
-            #     self._connected_future = tpe.submit(find_connected_mesh_elements_0d, self._model.get_mesh_coordinates(), 2, True)
-            #     self._connected_future.owner = self
-            #     self._connected_future.add_done_callback(_connected_calculation_finished)
             connected_elements = find_connected_mesh_elements_0d(self._model.get_mesh_coordinates(), 2, True)
             self._update_connected_groups(connected_elements)
-            # connected_elements = self._find_connected_mesh_elements_1d(self._model.get_mesh_coordinates())
+
         self._scene.set_mesh_visibility(checked)
         self._scene.set_detection_plane_visibility(checked)
         self._scene.set_segmentation_visibility(not checked)
@@ -185,9 +179,6 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
         region = coordinate_field.getFieldmodule().getRegion()
         stl_import_data_into_region(region, inputs_stl)
-
-        # output_exf = os.path.join(self._location, "mesh_of_stl.exf")
-        # region.writeFile(output_exf)
 
         # Delete the WebGL JSON files.
         os.remove(inputs_stl)
@@ -261,7 +252,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.detectionPlaneAlphaDoubleSpinBox.setValue(settings.get("plane-alpha", 1.0))
 
         dimensions = self._model.get_dimensions()
-        min_dim = min(dimensions)
+        min_dim = max(1, min(dimensions))
         self._ui.tessellationDivisionsLineEdit.setText(settings.get("tessellation", ", ".join([str(int(d / 2 + 0.5)) for d in dimensions])))
         self._ui.pointDensityLineEdit.setText(settings.get("point-density", f'{10000 / min_dim ** 2}'))
         self._ui.pointSizeLineEdit.setText(settings.get("point-size", f'{min_dim / 100}'))
@@ -361,7 +352,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._scene.set_image_plane_visibility(0)
         self._scene.set_segmentation_visibility(1)
         self._model.generate_points(float(self._ui.pointDensityLineEdit.text()))
-        # After the segmentation have been exported the graphics
+        # After the segmentation has been exported the graphics
         # will be re-instated to the correct state.
         self._export_segmentation_graphics()
 
