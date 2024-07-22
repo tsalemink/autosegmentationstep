@@ -161,10 +161,50 @@ class Ui_AutoSegmentationWidget(object):
         self.groupBoxSegmentation.setObjectName(u"groupBoxSegmentation")
         self.formLayout = QFormLayout(self.groupBoxSegmentation)
         self.formLayout.setObjectName(u"formLayout")
+        self.allowHighTessellationsCheckBox = QCheckBox(self.groupBoxSegmentation)
+        self.allowHighTessellationsCheckBox.setObjectName(u"allowHighTessellationsCheckBox")
+
+        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.allowHighTessellationsCheckBox)
+
+        self.label_4 = QLabel(self.groupBoxSegmentation)
+        self.label_4.setObjectName(u"label_4")
+
+        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.label_4)
+
+        self.tessellationDivisionsLineEdit = QLineEdit(self.groupBoxSegmentation)
+        self.tessellationDivisionsLineEdit.setObjectName(u"tessellationDivisionsLineEdit")
+
+        self.formLayout.setWidget(4, QFormLayout.FieldRole, self.tessellationDivisionsLineEdit)
+
+        self.label_5 = QLabel(self.groupBoxSegmentation)
+        self.label_5.setObjectName(u"label_5")
+
+        self.formLayout.setWidget(6, QFormLayout.LabelRole, self.label_5)
+
+        self.pointDensityLineEdit = QLineEdit(self.groupBoxSegmentation)
+        self.pointDensityLineEdit.setObjectName(u"pointDensityLineEdit")
+
+        self.formLayout.setWidget(6, QFormLayout.FieldRole, self.pointDensityLineEdit)
+
+        self.label_8 = QLabel(self.groupBoxSegmentation)
+        self.label_8.setObjectName(u"label_8")
+
+        self.formLayout.setWidget(7, QFormLayout.LabelRole, self.label_8)
+
+        self.pointSizeLineEdit = QLineEdit(self.groupBoxSegmentation)
+        self.pointSizeLineEdit.setObjectName(u"pointSizeLineEdit")
+
+        self.formLayout.setWidget(7, QFormLayout.FieldRole, self.pointSizeLineEdit)
+
+        self.checkBoxTargetSpecificValue = QCheckBox(self.groupBoxSegmentation)
+        self.checkBoxTargetSpecificValue.setObjectName(u"checkBoxTargetSpecificValue")
+
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.checkBoxTargetSpecificValue)
+
         self.label_3 = QLabel(self.groupBoxSegmentation)
         self.label_3.setObjectName(u"label_3")
 
-        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.label_3)
+        self.formLayout.setWidget(5, QFormLayout.LabelRole, self.label_3)
 
         self.segmentationAlphaDoubleSpinBox = QDoubleSpinBox(self.groupBoxSegmentation)
         self.segmentationAlphaDoubleSpinBox.setObjectName(u"segmentationAlphaDoubleSpinBox")
@@ -173,42 +213,7 @@ class Ui_AutoSegmentationWidget(object):
         self.segmentationAlphaDoubleSpinBox.setSingleStep(0.010000000000000)
         self.segmentationAlphaDoubleSpinBox.setValue(1.000000000000000)
 
-        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.segmentationAlphaDoubleSpinBox)
-
-        self.allowHighTessellationsCheckBox = QCheckBox(self.groupBoxSegmentation)
-        self.allowHighTessellationsCheckBox.setObjectName(u"allowHighTessellationsCheckBox")
-
-        self.formLayout.setWidget(1, QFormLayout.FieldRole, self.allowHighTessellationsCheckBox)
-
-        self.label_4 = QLabel(self.groupBoxSegmentation)
-        self.label_4.setObjectName(u"label_4")
-
-        self.formLayout.setWidget(2, QFormLayout.LabelRole, self.label_4)
-
-        self.tessellationDivisionsLineEdit = QLineEdit(self.groupBoxSegmentation)
-        self.tessellationDivisionsLineEdit.setObjectName(u"tessellationDivisionsLineEdit")
-
-        self.formLayout.setWidget(2, QFormLayout.FieldRole, self.tessellationDivisionsLineEdit)
-
-        self.label_5 = QLabel(self.groupBoxSegmentation)
-        self.label_5.setObjectName(u"label_5")
-
-        self.formLayout.setWidget(3, QFormLayout.LabelRole, self.label_5)
-
-        self.pointDensityLineEdit = QLineEdit(self.groupBoxSegmentation)
-        self.pointDensityLineEdit.setObjectName(u"pointDensityLineEdit")
-
-        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.pointDensityLineEdit)
-
-        self.label_8 = QLabel(self.groupBoxSegmentation)
-        self.label_8.setObjectName(u"label_8")
-
-        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.label_8)
-
-        self.pointSizeLineEdit = QLineEdit(self.groupBoxSegmentation)
-        self.pointSizeLineEdit.setObjectName(u"pointSizeLineEdit")
-
-        self.formLayout.setWidget(4, QFormLayout.FieldRole, self.pointSizeLineEdit)
+        self.formLayout.setWidget(5, QFormLayout.FieldRole, self.segmentationAlphaDoubleSpinBox)
 
 
         self.verticalLayout_3.addWidget(self.groupBoxSegmentation)
@@ -365,15 +370,24 @@ class Ui_AutoSegmentationWidget(object):
         self.overrideScalingCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Override pre-dertermined scaling", None))
         self.label_6.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Scaling:", None))
         self.groupBoxSegmentation.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))
-        self.label_3.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Contour Alpha:", None))
 #if QT_CONFIG(tooltip)
-        self.allowHighTessellationsCheckBox.setToolTip(QCoreApplication.translate("AutoSegmentationWidget", u"High tessellations are turned off by default because it may take the contour calcuation en exceedingly long time", None))
+        self.allowHighTessellationsCheckBox.setToolTip(QCoreApplication.translate("AutoSegmentationWidget", u"High tessellations are turned off by default because it may take the contour\n"
+"calcuation en exceedingly long time to be calcuated.", None))
 #endif // QT_CONFIG(tooltip)
         self.allowHighTessellationsCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Allow high tessellations", None))
         self.label_4.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Tessellation Divisions:", None))
         self.tessellationDivisionsLineEdit.setText("")
         self.label_5.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Density:", None))
         self.label_8.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Point Size:", None))
+#if QT_CONFIG(tooltip)
+        self.checkBoxTargetSpecificValue.setToolTip(QCoreApplication.translate("AutoSegmentationWidget", u"When dealing with discrete values in the data, this option\n"
+" can be used to target single values within the data.\n"
+"The segmentation contour will have to be very close\n"
+" to the targetted value for the segmentation\n"
+" at that value to result in anything visible.", None))
+#endif // QT_CONFIG(tooltip)
+        self.checkBoxTargetSpecificValue.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Target specific value", None))
+        self.label_3.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Contour Alpha:", None))
         self.groupBoxVisibility.setTitle(QCoreApplication.translate("AutoSegmentationWidget", u"Visibility", None))
         self.imagePlaneCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Image Plane", None))
         self.segmentationCheckBox.setText(QCoreApplication.translate("AutoSegmentationWidget", u"Segmentation", None))

@@ -233,14 +233,73 @@
            <string>Segmentation</string>
           </property>
           <layout class="QFormLayout" name="formLayout">
-           <item row="0" column="0">
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="allowHighTessellationsCheckBox">
+             <property name="toolTip">
+              <string>High tessellations are turned off by default because it may take the contour
+calcuation en exceedingly long time to be calcuated.</string>
+             </property>
+             <property name="text">
+              <string>Allow high tessellations</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Tessellation Divisions:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLineEdit" name="tessellationDivisionsLineEdit">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Point Density:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLineEdit" name="pointDensityLineEdit"/>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Point Size:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QLineEdit" name="pointSizeLineEdit"/>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="checkBoxTargetSpecificValue">
+             <property name="toolTip">
+              <string>When dealing with discrete values in the data, this option
+ can be used to target single values within the data.
+The segmentation contour will have to be very close
+ to the targetted value for the segmentation
+ at that value to result in anything visible.</string>
+             </property>
+             <property name="text">
+              <string>Target specific value</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>Contour Alpha:</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
+           <item row="5" column="1">
             <widget class="QDoubleSpinBox" name="segmentationAlphaDoubleSpinBox">
              <property name="decimals">
               <number>3</number>
@@ -255,50 +314,6 @@
               <double>1.000000000000000</double>
              </property>
             </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QCheckBox" name="allowHighTessellationsCheckBox">
-             <property name="toolTip">
-              <string>High tessellations are turned off by default because it may take the contour calcuation en exceedingly long time</string>
-             </property>
-             <property name="text">
-              <string>Allow high tessellations</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Tessellation Divisions:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="tessellationDivisionsLineEdit">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>Point Density:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="pointDensityLineEdit"/>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string>Point Size:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QLineEdit" name="pointSizeLineEdit"/>
            </item>
           </layout>
          </widget>

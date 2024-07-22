@@ -98,6 +98,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.detectionPlaneAlphaDoubleSpinBox.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.doneButton.clicked.connect(self._done_execution)
         self._ui.comboBoxConnectedSurfaces.currentIndexChanged.connect(self._connected_subgroup_changed)
+        self._ui.checkBoxTargetSpecificValue.stateChanged.connect(self._target_specific_value_changed)
 
     def register_done_execution(self, done_execution):
         self._callback = done_execution
@@ -127,6 +128,10 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         group = self._ui.comboBoxConnectedSurfaces.currentData() if value >= 0 else self._create_mesh_field_group()
         if group:
             self._scene.set_mesh_group(group, value > 0)
+
+    def _target_specific_value_changed(self, state):
+        self._model.set_targeted_mode(state == 2)
+        self._scene.targeted_mode_changed()
 
     def _toggle_detection_mode(self, checked):
         if checked and not self._detection_current:
@@ -250,6 +255,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
         self._ui.scalingLineEdit.setText(settings.get("scaling", "1, 1, 1"))
         self._ui.segmentationMeshAlphaDoubleSpinBox.setValue(settings.get("mesh-alpha", 1.0))
         self._ui.detectionPlaneAlphaDoubleSpinBox.setValue(settings.get("plane-alpha", 1.0))
+        self._ui.checkBoxTargetSpecificValue.setChecked(settings.get("target-specific", False))
 
         dimensions = self._model.get_dimensions()
         min_dim = max(1, min(dimensions))
@@ -288,6 +294,7 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
             "point-size": self._ui.pointSizeLineEdit.text(),
             "mesh-alpha": self._ui.segmentationMeshAlphaDoubleSpinBox.value(),
             "plane-alpha": self._ui.detectionPlaneAlphaDoubleSpinBox.value(),
+            "target-specific": self._ui.checkBoxTargetSpecificValue.isChecked(),
         }
 
         with open(self._settings_file(), "w") as f:
@@ -340,13 +347,15 @@ class AutoSegmentationWidget(QtWidgets.QWidget):
 
     def _update_point_size(self):
         size = self._ui.pointSizeLineEdit.text()
-        self._scene.set_point_size(float(size))
+        if size:
+            self._scene.set_point_size(float(size))
 
     def _update_scale(self):
         text = self._ui.scalingLineEdit.text()
-        scale = [float(x.strip()) for x in text.split(',')]
-        self._model.set_scale(scale)
-        self._scene.update_scale()
+        if text:
+            scale = [float(x.strip()) for x in text.split(',')]
+            self._model.set_scale(scale)
+            self._scene.update_scale()
 
     def _generate_points(self):
         self._scene.set_image_plane_visibility(0)

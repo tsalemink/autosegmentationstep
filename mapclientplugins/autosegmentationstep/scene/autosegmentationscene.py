@@ -3,6 +3,7 @@ Created: April, 2023
 
 @author: tsalemink
 """
+from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.zinc.field import Field
 from cmlibs.zinc.glyph import Glyph
 from cmlibs.zinc.material import Material
@@ -60,14 +61,13 @@ class AutoSegmentationScene(object):
         material.setName('texture_block')
         material.setTextureField(1, image_field)
 
-        self._root_scene.beginChange()
-        iso_graphic = self._root_scene.createGraphicsContours()
-        iso_graphic.setCoordinateField(finite_element_field)
-        iso_graphic.setMaterial(material)
-        iso_graphic.setTextureCoordinateField(xi_field)
-        iso_graphic.setIsoscalarField(scalar_field)
-        iso_graphic.setListIsovalues([0.0])
-        self._root_scene.endChange()
+        with ChangeManager(self._root_scene):
+            iso_graphic = self._root_scene.createGraphicsContours()
+            iso_graphic.setCoordinateField(finite_element_field)
+            iso_graphic.setMaterial(material)
+            iso_graphic.setTextureCoordinateField(xi_field)
+            iso_graphic.setIsoscalarField(scalar_field)
+            iso_graphic.setListIsovalues([0.0])
 
         return iso_graphic
 
@@ -77,30 +77,30 @@ class AutoSegmentationScene(object):
         xi_field = field_module.findFieldByName('xi')
         scaled_xi_field = xi_field * self._scale_field * dimension_field
         image_field = self._model.get_image_field()
+        # windowed_image_field = self._model.get_windowed_image_field()
 
         tessellation_module = self._context.getTessellationmodule()
         tessellation = tessellation_module.createTessellation()
         tessellation.setMinimumDivisions([int(d / 2 + 0.5) for d in self._dimensions])
 
-        self._root_scene.beginChange()
-        segmentation_contour = self._root_scene.createGraphicsContours()
-        segmentation_contour.setCoordinateField(scaled_xi_field)
-        segmentation_contour.setTessellation(tessellation)
-        segmentation_contour.setIsoscalarField(image_field)
-        segmentation_contour.setListIsovalues([0.0])
-        self._root_scene.endChange()
+        with ChangeManager(self._root_scene):
+            segmentation_contour = self._root_scene.createGraphicsContours()
+            segmentation_contour.setCoordinateField(scaled_xi_field)
+            segmentation_contour.setTessellation(tessellation)
+            segmentation_contour.setIsoscalarField(image_field)
+            segmentation_contour.setListIsovalues([0.0])
+            # segmentation_contour.setSubgroupField(windowed_image_field)
 
         return segmentation_contour
 
     def _create_point_cloud_graphics(self):
-        self._output_scene.beginChange()
-        point_cloud = self._output_scene.createGraphicsPoints()
-        point_cloud.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
-        point_cloud.setCoordinateField(self._output_coordinates)
-        attributes = point_cloud.getGraphicspointattributes()
-        attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
-        # attributes.setBaseSize([min(self._dimensions) / 100])
-        self._output_scene.endChange()
+        with ChangeManager(self._output_scene):
+            point_cloud = self._output_scene.createGraphicsPoints()
+            point_cloud.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+            point_cloud.setCoordinateField(self._output_coordinates)
+            attributes = point_cloud.getGraphicspointattributes()
+            attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_SPHERE)
+            # attributes.setBaseSize([min(self._dimensions) / 100])
 
         return point_cloud
 
@@ -108,16 +108,15 @@ class AutoSegmentationScene(object):
         mesh_coordinates = self._model.get_mesh_coordinates()
 
         material_module = self._mesh_scene.getMaterialmodule()
-        green = material_module.findMaterialByName("blue")
+        blue = material_module.findMaterialByName("blue")
 
-        self._mesh_scene.beginChange()
-        segmentation_mesh = self._mesh_scene.createGraphicsSurfaces()
-        segmentation_mesh.setCoordinateField(mesh_coordinates)
-        segmentation_mesh.setMaterial(green)
-        segmentation_mesh.setVisibilityFlag(True)
-        visibility_field = self._model.get_visibility_field()
-        segmentation_mesh.setSubgroupField(visibility_field)
-        self._mesh_scene.endChange()
+        with ChangeManager(self._mesh_scene):
+            segmentation_mesh = self._mesh_scene.createGraphicsSurfaces()
+            segmentation_mesh.setCoordinateField(mesh_coordinates)
+            segmentation_mesh.setMaterial(blue)
+            segmentation_mesh.setVisibilityFlag(True)
+            visibility_field = self._model.get_visibility_field()
+            segmentation_mesh.setSubgroupField(visibility_field)
 
         return segmentation_mesh
 
@@ -127,12 +126,11 @@ class AutoSegmentationScene(object):
         material_module = self._detection_scene.getMaterialmodule()
         green = material_module.findMaterialByName("green")
 
-        self._detection_scene.beginChange()
-        detection_plane = self._detection_scene.createGraphicsSurfaces()
-        detection_plane.setCoordinateField(coordinate_field)
-        detection_plane.setMaterial(green)
-        detection_plane.setVisibilityFlag(False)
-        self._detection_scene.endChange()
+        with ChangeManager(self._detection_scene):
+            detection_plane = self._detection_scene.createGraphicsSurfaces()
+            detection_plane.setCoordinateField(coordinate_field)
+            detection_plane.setMaterial(green)
+            detection_plane.setVisibilityFlag(False)
 
         return detection_plane
 
@@ -181,7 +179,9 @@ class AutoSegmentationScene(object):
         self._iso_graphic.setListIsovalues([value * self._dimensions[2] * z_scale / 100])
 
     def set_segmentation_value(self, value):
-        self._segmentation_contour.setListIsovalues([value / 10000.0])
+        adj_value = value / 10000.0
+        self._model.set_segmentation_value(adj_value)
+        self._update_segmentation_contour_value(adj_value)
 
     def get_tessellation_divisions(self):
         return self._segmentation_contour.getTessellation().getMinimumDivisions(3)[1]
@@ -193,3 +193,10 @@ class AutoSegmentationScene(object):
         field_module = self._model.get_field_module()
         field_cache = field_module.createFieldcache()
         self._scale_field.assignReal(field_cache, self._model.get_scale())
+
+    def targeted_mode_changed(self):
+        self._segmentation_contour.setIsoscalarField(self._model.get_image_field())
+        self._update_segmentation_contour_value(self._model.get_segmentation_value())
+
+    def _update_segmentation_contour_value(self, adj_value):
+        self._segmentation_contour.setListIsovalues([adj_value - self._model.get_targeted_adjustment_value()])
