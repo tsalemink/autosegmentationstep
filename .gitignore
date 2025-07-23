@@ -2,3 +2,11 @@
 __pycache__/
 mapclientplugins/segmentationstep/test/
 build/
+
+# Distribution / packaging
+wheels/
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
